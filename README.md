@@ -24,7 +24,24 @@ to watch for changes and rebuild the project.
 
 ## Credits
 
-To be confirmed.
+Developed by [Eric Londaits](mailto:eric.londaits@imaginary.org) 
+for [Imaginary gGmbH](https://about.imaginary.org/), 
+along with the [Maison des Mathématiques et de l'Informatique](https://mmi-lyon.fr/) 
+with the support of [G·EM (Genève Évasions Mathématiques)](https://www.unige.ch/math/GEM/), 
+a structure of the [Université de Genève](https://www.unige.ch/).
+
+Based on the [MUSKI](https://www.muski.io/) project, supported by the dive in program of the 
+Kulturstiftung des Bundes and the Beauftragte der Bundesregierung für Kultur und Medien.
+
+Uses the Drums RNN and Improv RNN models by [Google Magenta](https://magenta.tensorflow.org/).
+
+Drum machine based on:
+
+- The [deep-drum](https://github.com/Gogul09/deep-drum) app by Gogul Ilango,  licensed under the 
+  MIT License (). Copyright 2018, Gogul Ilango
+
+- The [Magenta Drums RNN demo](https://magenta.github.io/magenta-js/music/demos/drums_rnn.html)
+  licensed under the Apache License Version 2.0. Copyright, 2020 Google Inc.
 
 ## License
 
