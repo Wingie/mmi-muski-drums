@@ -1,0 +1,1 @@
+require('../sass/default.scss');

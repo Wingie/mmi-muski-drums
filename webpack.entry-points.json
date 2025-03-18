@@ -1,0 +1,6 @@
+{
+  "default": {
+    "mainJs": "main.js",
+    "html": "index.html"
+  }
+}
