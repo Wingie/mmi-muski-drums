@@ -1,6 +1,8 @@
 node_modules
 .babel-cache
 
+/vhosts.dev
+/vendor
 /dist
 /work
 

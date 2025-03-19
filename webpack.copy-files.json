@@ -1,3 +1,14 @@
 {
-  "patterns": []
+  "patterns": [
+    {
+      "from": "**",
+      "to": "vendor/jquery",
+      "context": "node_modules/jquery/dist"
+    },
+    {
+      "from": "**",
+      "to": "vendor/bootstrap",
+      "context": "node_modules/bootstrap/dist"
+    }
+  ]
 }

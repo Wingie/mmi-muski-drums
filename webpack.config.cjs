@@ -85,7 +85,9 @@ module.exports = {
       filename: '[name].[contenthash].css',
     }),
     ...htmlPlugins,
-    copyPatterns.patterns.length > 0 ? new CopyPlugin(copyPatterns) : false,
+    copyPatterns.patterns.length > 0 ? new CopyPlugin({
+      patterns: copyPatterns.patterns,
+    }) : false,
     new CleanWebpackPlugin({
       // todo: temporary measure. Dev builds should be done without hashes in the filename.
       cleanOnceBeforeBuildPatterns: ['**/*'],
