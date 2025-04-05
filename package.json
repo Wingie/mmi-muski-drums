@@ -47,7 +47,7 @@
   },
   "private": true,
   "scripts": {
-    "postinstall": "degit github:IMAGINARY/muski-drums#v1.2.0 --force vendor/muski-drums",
+    "postinstall": "rm -rf vendor/muski-drums && degit github:IMAGINARY/muski-drums#v1.4.0 --force vendor/muski-drums",
     "build": "npx webpack",
     "watch": "npx webpack --watch"
   }
