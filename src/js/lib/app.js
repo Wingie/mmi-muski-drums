@@ -4,10 +4,11 @@ import MuskiDrumsManager from '../../../vendor/muski-drums/src/js/muski-drums-ma
 import MuskiDrums from '../../../vendor/muski-drums/src/js/muski-drums';
 
 export default class MuskiDrumsApp {
-  constructor(config, container) {
+  constructor(config) {
     this.config = config;
-    this.container = container;
     this.drumsManager = null;
+    this.element = document.createElement('div');
+    this.element.classList.add('muski-drums-app');
   }
 
   async init() {
@@ -29,6 +30,6 @@ export default class MuskiDrumsApp {
         preset: null,
       }
     );
-    this.container.append(drumMachine.$element[0]);
+    this.element.append(drumMachine.$element[0]);
   }
 }

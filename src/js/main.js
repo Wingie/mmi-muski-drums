@@ -6,6 +6,7 @@ import showFatalError from './helpers-web/show-fatal-error';
 import CfgLoader from './loader/cfg-loader';
 import CfgReaderFetch from './loader/cfg-reader-fetch';
 import MuskiDrumsApp from './lib/app';
+import AppScaler from './helpers-web/app-scaler';
 
 (async () => {
   try {
@@ -34,8 +35,11 @@ import MuskiDrumsApp from './lib/app';
 
     const containers = document.querySelectorAll('[data-component=MuskiDrumsApp]');
     if (containers.length > 0) {
-      const app = new MuskiDrumsApp(config, containers[0]);
+      const app = new MuskiDrumsApp(config);
+      const scaler = new AppScaler(app.element);
+      containers[0].appendChild(scaler.element);
       await app.init();
+      scaler.refresh();
     }
   } catch (err) {
     showFatalError('Fatal error', err);
