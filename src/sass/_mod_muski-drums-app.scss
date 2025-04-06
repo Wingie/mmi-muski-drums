@@ -4,4 +4,12 @@
   width: 1920px;
   height: 1080px;
   background-color: colors.$c-white;
+
+  .muski-drums {
+    position: absolute;
+    top: 160px;
+    left: 350px;
+    transform: scale(1.25);
+    transform-origin: top left;
+  }
 }
