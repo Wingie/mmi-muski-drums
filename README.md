@@ -12,6 +12,12 @@ npm run build
 
 to build the project. The built files are in the `dist` directory.
 
+## Configuration
+
+The configuration files are in the `config` directory.
+
+You can override any of the configuration keys through a `settings.yml` file in the root directory.
+
 ## Development
 
 Run

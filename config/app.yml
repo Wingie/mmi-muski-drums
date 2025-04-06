@@ -1,0 +1,4 @@
+app:
+  checkpointUrl: http://static.mmi-muski-drums.localhost/checkpoints/drums_rnn
+  soundfontUrl: http://static.mmi-muski-drums.localhost/soundfonts/dmx/
+  lang: fr

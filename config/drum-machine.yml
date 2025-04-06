@@ -1,0 +1,14 @@
+drumMachine:
+  withRandomGenerator: true
+  defaultTempo: 100
+  editableOutput: false
+  drums:
+    - kick
+    - snare
+    - hihatClosed
+    - hihatOpen
+    - tomLow
+    - tomMid
+    - tomHigh
+    - crash
+    - ride

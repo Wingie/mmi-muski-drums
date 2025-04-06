@@ -44,6 +44,8 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "deepmerge": "^4.3.1",
+    "js-yaml": "^4.1.0"
   },
   "private": true,
   "scripts": {

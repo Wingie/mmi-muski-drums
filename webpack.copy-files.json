@@ -9,6 +9,10 @@
       "from": "**",
       "to": "vendor/bootstrap",
       "context": "node_modules/bootstrap/dist"
+    },
+    {
+      "from": "config",
+      "to": "../config"
     }
   ]
 }
