@@ -12,5 +12,24 @@
     .muski-tempo {
       display: none;
     }
+
+    .muski-sequencer-matrix {
+      th {
+        font-size: 1.2rem;
+      }
+
+      .muski-sequencer-row-label {
+        width: 8.5rem;
+      }
+    }
+
+    .bar-button {
+      margin-top: 0.8rem;
+      margin-bottom: 0.4rem;
+
+      .bar-button-button {
+        font-size: 1.2rem;
+      }
+    }
   }
 }
