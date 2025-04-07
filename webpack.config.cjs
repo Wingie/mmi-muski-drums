@@ -65,6 +65,10 @@ module.exports = {
             loader: 'sass-loader',
             options: {
               sourceMap: true,
+              sassOptions: {
+                loadPaths: ['./node_modules'],
+                quietDeps: true,
+              }
             },
           },
         ],
