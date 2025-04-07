@@ -2,6 +2,7 @@
 import MuskiDrumsManager from '../../../vendor/muski-drums/src/js/muski-drums-manager';
 // eslint-disable-next-line import/no-relative-packages
 import MuskiDrums from '../../../vendor/muski-drums/src/js/muski-drums';
+import PatternDiagram from './pattern-diagram';
 
 export default class MuskiDrumsApp {
   constructor(config) {
@@ -34,5 +35,31 @@ export default class MuskiDrumsApp {
       }
     );
     this.element.append(drumMachine.$element[0]);
+    this.initExamples();
+  }
+
+  initExamples() {
+    const container = document.createElement('div');
+    container.classList.add('muski-drums-examples');
+
+    this.config?.examples?.forEach((example) => {
+      const exampleContainer = document.createElement('div');
+      exampleContainer.classList.add('muski-drums-example');
+      const title = document.createElement('div');
+      title.classList.add('title');
+      title.textContent = example?.title?.[this.config.app.lang] || example.title.en || '';
+      exampleContainer.append(title);
+
+      const diagram = new PatternDiagram(
+        example.rows,
+        example.cols,
+        example.pattern
+      );
+      exampleContainer.append(diagram.element);
+
+      container.append(exampleContainer);
+    });
+
+    this.element.append(container);
   }
 }

@@ -1,0 +1,31 @@
+examples:
+  - id: rock
+    title:
+      en: Rock
+      fr: Rock
+    rows: 9
+    cols: 6
+    pattern:
+      - [1]
+      - [0, 0, 0, 0, 1]
+      - [1, 0, 1, 0, 1]
+  - id: disco
+    title:
+      en: Disco
+      fr: Disco
+    rows: 9
+    cols: 6
+    pattern:
+      - [1, 0, 0, 0, 1]
+      - [0, 0, 0, 0, 1]
+      - [0, 0, 1]
+  - id: hipHop
+    title:
+      en: Hip Hop
+      fr: Hip Hop
+    rows: 9
+    cols: 6
+    pattern:
+      - [1, 0, 0, 1]
+      - [0, 0, 0, 0, 1]
+      - [1, 1, 1, 1, 1, 1]

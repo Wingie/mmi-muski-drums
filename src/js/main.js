@@ -28,6 +28,7 @@ import AppScaler from './helpers-web/app-scaler';
     const config = await cfgLoader.load([
       'config/app.yml',
       'config/drum-machine.yml',
+      'config/examples.yml',
       settingsFilename,
     ]).catch((err) => {
       throw new Error(`Error loading configuration: ${err.message}`);

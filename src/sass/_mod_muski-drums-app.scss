@@ -32,4 +32,25 @@
       }
     }
   }
+
+  .muski-drums-examples {
+    position: absolute;
+    top: 220px;
+    left: 60px;
+
+    .muski-drums-example .title {
+      margin-top: -1rem;
+      text-align: right;
+      position: relative;
+      left: -100%;
+      transform: rotate(270deg);
+      transform-origin: top right;
+      translate: -1.9rem 1.5rem;
+      white-space: nowrap;
+    }
+
+    .pattern-diagram {
+      margin-bottom: 2rem;
+    }
+  }
 }
