@@ -1,0 +1,40 @@
+@use 'colors';
+
+.muski-drums-app.theme-dark {
+  background-color: colors.$c-black;
+  color: colors.$c-white;
+
+  .muski-drums, .muski-bass {
+    .muski-sequencer-matrix {
+      td {
+        border-color: transparent;
+      }
+
+      .muski-sequencer-cell {
+        background-color: #929292;
+        &.active {
+          outline: none;
+        }
+      }
+    }
+
+    &.with-ai .muski-sequencer-matrix {
+      .muski-sequencer-cell.ai-input {
+        background-color: #cacaca;
+      }
+    }
+
+    .bar-button {
+      background-color: transparent;
+
+      .bar-button-bar {
+        background-color: transparent;
+      }
+    }
+
+    .muski-tempo .muski-tempo-label {
+      color: colors.$c-black;
+      background-color: #f0ef68;
+    }
+  }
+}

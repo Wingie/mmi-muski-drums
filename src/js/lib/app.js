@@ -9,6 +9,9 @@ export default class MuskiDrumsApp {
     this.drumsManager = null;
     this.element = document.createElement('div');
     this.element.classList.add('muski-drums-app');
+    if (this.config.app.theme) {
+      this.element.classList.add(`theme-${this.config.app.theme}`);
+    }
   }
 
   async init() {
