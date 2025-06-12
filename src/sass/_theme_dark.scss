@@ -1,3 +1,4 @@
+@use 'sass:color';
 @use 'colors';
 
 .muski-drums-app.theme-dark {
@@ -61,13 +62,11 @@
       //border-color: colors.$c-accent;
 
       &:hover {
-        background-color: darken(colors.$c-accent, 10%) !important;
-        //border-color: darken(colors.$c-accent, 10%);
+        background-color: color.scale(colors.$c-accent, $lightness: -15%) !important;
       }
 
       &:active {
-        background-color: darken(colors.$c-accent, 20%) !important;
-        //border-color: darken(colors.$c-accent, 20%);
+        background-color: color.scale(colors.$c-accent, $lightness: -30%) !important;
       }
     }
 
