@@ -11,7 +11,9 @@
       }
 
       .muski-sequencer-cell {
-        background-color: #929292;
+        background-color: transparent;
+        border: 1px solid white;
+        margin: 3px 1px;
         &.active {
           outline: none;
         }
@@ -19,8 +21,25 @@
     }
 
     &.with-ai .muski-sequencer-matrix {
-      .muski-sequencer-cell.ai-input {
-        background-color: #cacaca;
+      .muski-sequencer-cell {
+        &.ai-input {
+          background-color: #5e5e5e;
+          border-color: #5e5e5e;
+          border-radius: 10%;
+        }
+
+        &.active {
+          background-color: colors.$c-accent-complement-light !important;
+        }
+
+        &.on {
+          background-color: colors.$c-accent !important;
+          border-color: colors.$c-accent-lightest !important;
+        }
+
+        &.active.on {
+          background-color: colors.$c-accent-light !important;
+        }
       }
     }
 
@@ -30,11 +49,31 @@
       .bar-button-bar {
         background-color: transparent;
       }
+
+      .bar-button-button {
+        background-color: colors.$c-accent;
+        border-color: colors.$c-accent;
+      }
+    }
+
+    .btn-control-round {
+      background-color: colors.$c-accent;
+      //border-color: colors.$c-accent;
+
+      &:hover {
+        background-color: darken(colors.$c-accent, 10%) !important;
+        //border-color: darken(colors.$c-accent, 10%);
+      }
+
+      &:active {
+        background-color: darken(colors.$c-accent, 20%) !important;
+        //border-color: darken(colors.$c-accent, 20%);
+      }
     }
 
     .muski-tempo .muski-tempo-label {
       color: colors.$c-black;
-      background-color: #f0ef68;
+      background-color: colors.$c-accent;
     }
   }
 }

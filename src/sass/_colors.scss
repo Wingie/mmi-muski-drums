@@ -1,2 +1,13 @@
 $c-black: #231f20;
 $c-white: #fff;
+// The official accent color
+$c-accent-official: rgb(51,128,255);
+// A brighter accent color for better contrast with text
+$c-accent-brighter: rgb(74,142,255);
+$c-accent: $c-accent-brighter;
+
+$c-accent-light: rgb(167, 199, 255);
+$c-accent-lightest: rgb(221 234 255);
+
+$c-accent-complement: rgb(255, 128, 51);
+$c-accent-complement-light: rgb(255, 222, 140);
