@@ -28,6 +28,17 @@ npm run watch
 
 to watch for changes and rebuild the project.
 
+## Asset Download URLs
+
+During installation, required soundfont and model assets are automatically downloaded and extracted. You can override the download URLs using the following environment variables:
+
+- `MMI_MUSKI_DRUMS_DMX_ZIP_URL`: URL for the dmx.zip file (default: http://exhibits.storage.imaginary.org/mmi-muski-drums/soundfonts/dmx.zip)
+- `MMI_MUSKI_DRUMS_DRUMS_RNN_ZIP_URL`: URL for the drums_rnn.zip file (default: http://exhibits.storage.imaginary.org/mmi-muski-drums/checkpoints/drums_rnn.zip)
+
+The corresponding `.sha256` file is always fetched from the same location as the `.zip` file, with `.sha256` appended to the URL. For example, if you set `MMI_MUSKI_DRUMS_DMX_ZIP_URL` to `https://example.com/dmx.zip`, the script will fetch the hash from `https://example.com/dmx.zip.sha256`.
+
+Set these variables before running `npm install` if you need to use alternate asset locations.
+
 ## Credits
 
 Developed by [Eric Londaits](mailto:eric.londaits@imaginary.org) 

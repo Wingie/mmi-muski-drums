@@ -1,0 +1,15 @@
+[
+  {
+    "name": "dmx",
+    "zipEnv": "MMI_MUSKI_DRUMS_DMX_ZIP_URL",
+    "defaultZip": "https://s3.eu-central-1.amazonaws.com/exhibits.storage.imaginary.org/mmi-muski-drums/soundfonts/dmx.zip",
+    "outDir": "vendor/soundfonts"
+  },
+  {
+    "name": "drums_rnn",
+    "zipEnv": "MMI_MUSKI_DRUMS_DRUMS_RNN_ZIP_URL",
+    "defaultZip": "https://s3.eu-central-1.amazonaws.com/exhibits.storage.imaginary.org/mmi-muski-drums/checkpoints/drums_rnn.zip",
+    "outDir": "vendor/checkpoints"
+  }
+]
+

@@ -1,5 +1,5 @@
 app:
-  checkpointUrl: http://static.mmi-muski-drums.localhost/checkpoints/drums_rnn
-  soundfontUrl: http://static.mmi-muski-drums.localhost/soundfonts/dmx/
+  checkpointUrl: vendor/checkpoints/drums_rnn
+  soundfontUrl: vendor/soundfonts/dmx/
   lang: fr
   theme: dark

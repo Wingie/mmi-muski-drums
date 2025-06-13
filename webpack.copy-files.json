@@ -11,6 +11,16 @@
       "context": "node_modules/bootstrap/dist"
     },
     {
+      "from": "**",
+      "to": "../vendor/checkpoints",
+      "context": "vendor/checkpoints"
+    },
+    {
+      "from": "**",
+      "to": "../vendor/soundfonts",
+      "context": "vendor/soundfonts"
+    },
+    {
       "from": "config",
       "to": "../config"
     }
