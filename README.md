@@ -50,7 +50,7 @@ a structure of the [Université de Genève](https://www.unige.ch/).
 Based on the [MUSKI](https://www.muski.io/) project, supported by the dive in program of the 
 Kulturstiftung des Bundes and the Beauftragte der Bundesregierung für Kultur und Medien.
 
-Uses the Drums RNN and Improv RNN models by [Google Magenta](https://magenta.tensorflow.org/).
+Uses the Drums RNN model by [Google Magenta](https://magenta.tensorflow.org/).
 
 Drum machine based on:
 
@@ -59,6 +59,10 @@ Drum machine based on:
 
 - The [Magenta Drums RNN demo](https://magenta.github.io/magenta-js/music/demos/drums_rnn.html)
   licensed under the Apache License Version 2.0. Copyright, 2020 Google Inc.
+
+All audio samples synthesized from Fluid-Sounfont.
+- [FluidR3_GM.sf2](http://www.musescore.org/download/fluid-soundfont.tar.gz) (141 MB uncompressed)
+- Released under [Creative Commons Attribution 3.0 license](http://creativecommons.org/licenses/by/3.0/us/)
 
 ## License
 
