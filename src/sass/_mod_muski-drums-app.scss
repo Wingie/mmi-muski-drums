@@ -31,6 +31,18 @@
         font-size: 1.2rem;
       }
     }
+
+    .muski-drums-ai-panel {
+      display: none;
+    }
+
+    .muski-drums-random-panel {
+      display: none;
+    }
+
+    .muski-drums-controls-panel {
+      display: none;
+    }
   }
 
   .muski-drums-examples {
@@ -52,5 +64,11 @@
     .pattern-diagram {
       margin-bottom: 2rem;
     }
+  }
+
+  .muski-drums-app-controls {
+    position: absolute;
+    top: 790px;
+    left: 530px;
   }
 }
