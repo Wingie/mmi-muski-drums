@@ -12,9 +12,9 @@
       }
 
       .muski-sequencer-cell {
-        background-color: transparent;
-        border: 1px solid white;
+        background-color: colors.$c-gray-mid;
         margin: 3px 1px;
+        border-radius: 12%;
         &.active {
           outline: none;
         }
@@ -23,23 +23,44 @@
 
     &.with-ai .muski-sequencer-matrix {
       .muski-sequencer-cell {
-        &.ai-input {
-          background-color: #5e5e5e;
-          border-color: #5e5e5e;
-          border-radius: 10%;
-        }
-
         &.active {
-          background-color: colors.$c-accent-complement-light !important;
+          background-color: colors.$c-accent !important;
         }
 
         &.on {
-          background-color: colors.$c-accent !important;
-          border-color: colors.$c-accent-lightest !important;
+          background-color: colors.$c-gray-mid !important;
+          padding: 0;
+          &::after {
+            display: block;
+            content: "";
+            width: 100%;
+            height: 100%;
+            background-color: colors.$c-white !important;
+            border-radius: 50%;
+            box-shadow: 0 0 4px 0px #0000007d;
+            transition: transform 0.175s ease-in-out;
+            transform: scale(0.8);
+            transform-origin: center;
+          }
         }
 
         &.active.on {
-          background-color: colors.$c-accent-light !important;
+          background-color: colors.$c-accent !important;
+          &::after {
+            transform: scale(1);
+          }
+        }
+
+        &.ai-input {
+          background: repeating-linear-gradient(135deg, black, black 2px, colors.$c-gray-dark 2px, colors.$c-gray-dark 6px);
+
+          &.active {
+            background: repeating-linear-gradient(135deg, black, black 2px, colors.$c-accent 2px, colors.$c-accent 6px);
+          }
+
+          &.on {
+            background-color: colors.$c-gray-dark !important;
+          }
         }
       }
     }
