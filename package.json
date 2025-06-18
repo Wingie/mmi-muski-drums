@@ -54,7 +54,7 @@
   "private": true,
   "scripts": {
     "install-muski-drums": "rm -rf vendor/muski-drums && degit github:IMAGINARY/muski-drums#v1.6.0 --force vendor/muski-drums",
-    "postinstall": "npx install-muski-drums && node scripts/fetch-assets.js",
+    "postinstall": "npm run install-muski-drums && node scripts/fetch-assets.js",
     "build": "npx webpack",
     "watch": "npx webpack --watch"
   }
