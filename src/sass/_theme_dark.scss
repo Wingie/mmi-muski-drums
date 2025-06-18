@@ -52,10 +52,10 @@
         }
 
         &.ai-input {
-          background: repeating-linear-gradient(135deg, black, black 2px, colors.$c-gray-dark 2px, colors.$c-gray-dark 6px);
+          background: repeating-linear-gradient(135deg, colors.$c-black, colors.$c-black 2px, colors.$c-gray-dark 2px, colors.$c-gray-dark 6px);
 
           &.active {
-            background: repeating-linear-gradient(135deg, black, black 2px, colors.$c-accent 2px, colors.$c-accent 6px);
+            background: repeating-linear-gradient(135deg, colors.$c-black, colors.$c-black 2px, colors.$c-accent 2px, colors.$c-accent 6px);
           }
 
           &.on {

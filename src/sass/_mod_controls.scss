@@ -1,5 +1,80 @@
+@use 'sass:color';
 @use 'colors';
 
-.btn {
+.muski-drums-app-controls {
+  .btn {
+    &.active,
+    &:active {
+      background-color: colors.$c-accent;
+      border-color: colors.$c-accent;
+      color: colors.$c-white;
+      box-shadow: 0px 0px 6px 4px color.adjust(colors.$c-accent, $alpha: 0.5);
+    }
+  }
 
+  .btn-lg {
+    font-size: 1.5rem;
+  }
+
+  .btn-light {
+    background-color: colors.$c-gray-light;
+    border-color: colors.$c-gray-light;
+  }
+
+  .btn-round {
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 50%;
+    border-radius: 50%;
+    font-size: 0;
+    height: 3.7rem;
+    width: 3.7rem;
+  }
+
+  .btn-gen-n-play {
+    position: relative;
+    min-width: 14rem;
+    padding-left: 6.5rem;
+    padding-right: 1.3rem;
+    border-radius: 2rem;
+    text-align: left;
+    font-size: 1.75rem;
+    background-image: url('../../vendor/muski-drums/vendor/font-awesome/play-solid.svg');
+    background-repeat: no-repeat;
+    background-size: 1.8rem;
+    background-position: 3.7rem center;
+
+    &:after {
+      content: '';
+      position: absolute;
+      left: 0.7rem;
+      top: 0.7rem;
+      width: 2.5rem;
+      height: 2.5rem;
+
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+  }
+
+  .btn-ai {
+    &:after {
+      background-image: url('../../vendor/muski-drums/vendor/font-awesome/robot-solid.svg');
+    }
+  }
+
+  .btn-random {
+    &:after {
+      background-image: url('../../vendor/muski-drums/vendor/font-awesome/dice-solid.svg');
+    }
+  }
+
+  .btn-stop {
+    background-image: url('../../vendor/muski-drums/vendor/font-awesome/stop-solid.svg');
+  }
+
+  .btn-clear {
+    background-image: url('../../vendor/muski-drums/vendor/font-awesome/trash-can-solid.svg');
+    margin-left: auto;
+  }
 }
