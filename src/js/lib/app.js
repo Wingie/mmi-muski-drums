@@ -9,8 +9,10 @@ export default class MuskiDrumsApp {
     this.config = config;
     this.drumsManager = null;
     this.drumMachine = null;
-    this.generationMode = 'ai';
-    this.loop = 0;
+    this.generationMode = null;
+    this.currentLoopPlayCount = 0;
+    this.shouldRegeneratePattern = false;
+    this.loopsPlayedSinceLastInput = 0;
     this.element = document.createElement('div');
     this.element.classList.add('muski-drums-app');
     if (this.config.app.theme) {
@@ -41,35 +43,36 @@ export default class MuskiDrumsApp {
     this.drumMachine.events.on('start', this.handleDrumMachineStart.bind(this));
     this.drumMachine.events.on('step', this.handleDrumMachineStep.bind(this));
     this.drumMachine.events.on('stop', this.handleDrumMachineStop.bind(this));
+    this.drumMachine.sequencer.events.on('update', this.handleSequenceUpdate.bind(this));
 
     this.element.append(this.drumMachine.$element[0]);
     const controls = document.createElement('div');
     controls.classList.add('muski-drums-app-controls');
 
-    const aiButton = document.createElement('button');
-    aiButton.type = 'button';
-    aiButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-ai', 'me-2');
-    aiButton.textContent = 'AI';
-    aiButton.addEventListener('click', () => { this.handleAiButton(); });
-    controls.appendChild(aiButton);
+    this.aiButton = document.createElement('button');
+    this.aiButton.type = 'button';
+    this.aiButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-gen-n-play', 'btn-ai', 'me-3');
+    this.aiButton.textContent = 'avec IA';
+    this.aiButton.addEventListener('click', () => { this.handleAiButton(); });
+    controls.appendChild(this.aiButton);
 
-    const randomButton = document.createElement('button');
-    randomButton.type = 'button';
-    randomButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-random', 'me-2');
-    randomButton.textContent = 'Random';
-    randomButton.addEventListener('click', () => { this.handleRandomButton(); });
-    controls.appendChild(randomButton);
+    this.randomButton = document.createElement('button');
+    this.randomButton.type = 'button';
+    this.randomButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-gen-n-play', 'btn-random', 'me-3');
+    this.randomButton.textContent = 'aléatoire';
+    this.randomButton.addEventListener('click', () => { this.handleRandomButton(); });
+    controls.appendChild(this.randomButton);
 
-    const stopButton = document.createElement('button');
-    stopButton.type = 'button';
-    stopButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-stop', 'me-2');
-    stopButton.textContent = 'Stop';
-    stopButton.addEventListener('click', () => { this.handleStopButton(); });
-    controls.appendChild(stopButton);
+    this.stopButton = document.createElement('button');
+    this.stopButton.type = 'button';
+    this.stopButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-round', 'btn-control', 'btn-stop', 'me-3');
+    this.stopButton.textContent = 'Stop';
+    this.stopButton.addEventListener('click', () => { this.handleStopButton(); });
+    controls.appendChild(this.stopButton);
 
     const clearButton = document.createElement('button');
     clearButton.type = 'button';
-    clearButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-clear', 'me-2');
+    clearButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-round', 'btn-control', 'btn-clear');
     clearButton.textContent = 'Clear';
     clearButton.addEventListener('click', () => { this.handleClearButton(); });
     controls.appendChild(clearButton);
@@ -103,15 +106,28 @@ export default class MuskiDrumsApp {
     this.element.append(container);
   }
 
+  stopDrumMachine() {
+    if (this.drumMachine && this.drumMachine.isPlaying()) {
+      this.drumMachine.stop();
+    }
+    this.updateControls();
+  }
+
+  clearSequencer() {
+    this.drumMachine.sequencer.clear();
+  }
+
   handleAiButton() {
     if (!this.drumMachine) {
       throw new Error('Drum machine is not initialized.');
     }
     this.generationMode = 'ai';
-    // this.drumMachine.generateUsingAI();
+    this.shouldRegeneratePattern = true;
+    this.loopsPlayedSinceLastInput = 0;
     if (!this.drumMachine.isPlaying()) {
       this.drumMachine.start();
     }
+    this.updateControls();
   }
 
   handleRandomButton() {
@@ -119,43 +135,77 @@ export default class MuskiDrumsApp {
       throw new Error('Drum machine is not initialized.');
     }
     this.generationMode = 'random';
-    // this.drumMachine.generateUsingRandomAlgorithm();
+    this.shouldRegeneratePattern = true;
+    this.loopsPlayedSinceLastInput = 0;
     if (!this.drumMachine.isPlaying()) {
       this.drumMachine.start();
     }
+    this.updateControls();
   }
 
   handleStopButton() {
     if (!this.drumMachine) {
       throw new Error('Drum machine is not initialized.');
     }
-    this.drumMachine.stop();
+    this.stopDrumMachine();
   }
 
   handleClearButton() {
     if (!this.drumMachine) {
       throw new Error('Drum machine is not initialized.');
     }
-    this.drumMachine.sequencer.clear();
+    this.stopDrumMachine();
+    this.clearSequencer();
   }
 
   handleDrumMachineStart() {
-    this.loop = 0;
+    this.currentLoopPlayCount = 0;
+    this.updateControls();
   }
 
   handleDrumMachineStep(step) {
-    if (step === 0 && this.loop % 2 === 0) {
-      if (this.generationMode === 'ai') {
-        this.drumMachine.generateUsingAI();
-      } else if (this.generationMode === 'random') {
-        this.drumMachine.generateUsingRandomAlgorithm();
-      }
-    }
     if (step === 0) {
-      this.loop += 1;
+      this.currentLoopPlayCount += 1;
+      if (this.loopsPlayedSinceLastInput >= 8) {
+        this.stopDrumMachine();
+        this.clearSequencer();
+      } else {
+        this.loopsPlayedSinceLastInput += 1;
+
+        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 2)) {
+          if (this.generationMode === 'ai') {
+            this.drumMachine.generateUsingAI();
+          } else if (this.generationMode === 'random') {
+            this.drumMachine.generateUsingRandomAlgorithm();
+          }
+          this.shouldRegeneratePattern = false;
+          this.currentLoopPlayCount = 0;
+        }
+      }
     }
   }
 
   handleDrumMachineStop() {
+    this.updateControls();
+  }
+
+  handleSequenceUpdate() {
+    if (this.drumMachine.isPlaying()) {
+      this.shouldRegeneratePattern = true;
+      this.loopsPlayedSinceLastInput = 0;
+    }
+  }
+
+  updateControls() {
+    if (this.drumMachine.isPlaying() && this.generationMode === 'ai') {
+      this.aiButton.classList.add('active');
+      this.randomButton.classList.remove('active');
+    } else if (this.drumMachine.isPlaying() && this.generationMode === 'random') {
+      this.aiButton.classList.remove('active');
+      this.randomButton.classList.add('active');
+    } else {
+      this.aiButton.classList.remove('active');
+      this.randomButton.classList.remove('active');
+    }
   }
 }
