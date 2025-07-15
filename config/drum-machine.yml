@@ -3,12 +3,21 @@ drumMachine:
   defaultTempo: 100
   editableOutput: false
   drums:
-    - kick
-    - snare
-    - hihatClosed
-    - hihatOpen
-    - tomLow
-    - tomMid
-    - tomHigh
-    - crash
-    - ride
+    - id: kick
+      vol: 0.5
+    - id: snare
+      vol: 1.5
+    - id: hihatClosed
+      vol: 0
+    - id: hihatOpen
+      vol: -3.5
+    - id: tomLow
+      vol: -5
+    - id: tomMid
+      vol: -5
+    - id: tomHigh
+      vol: -5
+    - id: crash
+      vol: -5.5
+    - id: ride
+      vol: -4.5

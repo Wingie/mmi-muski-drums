@@ -32,13 +32,19 @@ export default class MuskiDrumsApp {
       this.drumsManager.createToneTransport(),
       {
         lang: this.config.app.lang,
-        drums: this.config.drumMachine.drums,
+        drums: this.config.drumMachine.drums.map((d) => d.id),
         tempo: this.config.drumMachine.defaultTempo,
         withRandom: this.config.drumMachine.withRandomGenerator,
         editableOutput: this.config.drumMachine.editableOutput,
         preset: null,
       }
     );
+    // Set volumes
+    this.config.drumMachine.drums.forEach((drum) => {
+      if (drum.vol !== undefined) {
+        this.drumMachine.setDrumVolume(drum.id, drum.vol);
+      }
+    });
 
     this.drumMachine.events.on('start', this.handleDrumMachineStart.bind(this));
     this.drumMachine.events.on('step', this.handleDrumMachineStep.bind(this));
