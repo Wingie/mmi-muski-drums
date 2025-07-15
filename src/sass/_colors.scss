@@ -6,9 +6,10 @@ $c-gray-light: #bbbbbb;
 
 // The official accent color
 $c-accent-official: rgb(51,128,255);
+$c-accent-new: #3973b9;
 // A brighter accent color for better contrast with text
 $c-accent-brighter: rgb(74,142,255);
-$c-accent: $c-accent-brighter;
+$c-accent: $c-accent-new;
 
 $c-accent-light: rgb(167, 199, 255);
 $c-accent-lightest: rgb(221 234 255);
