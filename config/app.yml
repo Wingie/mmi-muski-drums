@@ -3,3 +3,5 @@ app:
   soundfontUrl: vendor/soundfonts/dmx/
   lang: fr
   theme: dark
+  # Number of loops after which, unless there is user input, the drum machine will stop.
+  maxIdleLoops: 8

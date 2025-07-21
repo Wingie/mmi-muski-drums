@@ -172,9 +172,8 @@ export default class MuskiDrumsApp {
   handleDrumMachineStep(step) {
     if (step === 0) {
       this.currentLoopPlayCount += 1;
-      if (this.loopsPlayedSinceLastInput >= 8) {
+      if (this.loopsPlayedSinceLastInput >= this.config.app.maxIdleLoops) {
         this.stopDrumMachine();
-        this.clearSequencer();
       } else {
         this.loopsPlayedSinceLastInput += 1;
 
