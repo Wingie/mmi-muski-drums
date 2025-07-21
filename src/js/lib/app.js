@@ -18,6 +18,16 @@ export default class MuskiDrumsApp {
     if (this.config.app.theme) {
       this.element.classList.add(`theme-${this.config.app.theme}`);
     }
+    this.idleTimeout = null;
+    if (this.config.app.idleClearSeconds && this.config.app.idleClearSeconds > 0) {
+      this.setIdleTimeout();
+      $(document).on('mousemove keydown touchstart', () => {
+        // Only reset the idle timeout if it is set
+        if (this.idleTimeout) {
+          this.setIdleTimeout();
+        }
+      });
+    }
   }
 
   async init() {
@@ -166,6 +176,7 @@ export default class MuskiDrumsApp {
 
   handleDrumMachineStart() {
     this.currentLoopPlayCount = 0;
+    this.stopIdleTimeout();
     this.updateControls();
   }
 
@@ -191,6 +202,7 @@ export default class MuskiDrumsApp {
   }
 
   handleDrumMachineStop() {
+    this.setIdleTimeout();
     this.updateControls();
   }
 
@@ -212,5 +224,24 @@ export default class MuskiDrumsApp {
       this.aiButton.classList.remove('active');
       this.randomButton.classList.remove('active');
     }
+  }
+
+  setIdleTimeout() {
+    this.stopIdleTimeout();
+    this.idleTimeout = setTimeout(() => {
+      this.handleIdleTimeout();
+    }, this.config.app.idleClearSeconds * 1000);
+  }
+
+  stopIdleTimeout() {
+    if (this.idleTimeout) {
+      clearTimeout(this.idleTimeout);
+      this.idleTimeout = null;
+    }
+  }
+
+  handleIdleTimeout() {
+    this.stopDrumMachine();
+    this.clearSequencer();
   }
 }
