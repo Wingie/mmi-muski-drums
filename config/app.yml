@@ -1,7 +1,7 @@
 app:
   checkpointUrl: vendor/checkpoints/drums_rnn
   soundfontUrl: vendor/soundfonts/dmx/
-  lang: fr
+  lang: en
   theme: dark
   # Number of loops after which, unless there is user input, the drum machine will stop.
   maxIdleLoops: 8
