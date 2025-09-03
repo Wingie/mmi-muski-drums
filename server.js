@@ -1,7 +1,8 @@
 // MMI-Muski-Drums Enhanced Server
-// Express + Socket.io server serving webpack dist files
-// Based on Drum-E server architecture
+// Express + Socket.io + OSC bridge server
+// Based on working Drum-E server architecture
 
+const osc = require('node-osc');
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -9,7 +10,9 @@ const path = require('path');
 const { exec } = require('child_process');
 
 // Server configuration
-const PORT = 8080;
+const WEB_PORT = 8080;
+const OSC_OUT_PORT = 4560;  // TO Sonic Pi (where sonic-pi-receiver.rb receives commands)
+const OSC_IN_PORT = 12004;  // FROM Sonic Pi (where sonic-pi-receiver.rb sends feedback)
 
 console.log('🎵 Starting MMI-Muski-Drums Enhanced Server...');
 
@@ -26,28 +29,75 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Socket.io connection handling (ready for future OSC bridge)
+// OSC setup
+let oscServer, oscClient;
+let isOSCConnected = false;
+
+// Socket.IO connection handling (copied from working Drum-E)
 io.on('connection', (socket) => {
-  console.log('🔌 Browser connected:', socket.id);
+  console.log('🔌 MMI browser connected');
   
-  socket.on('disconnect', () => {
-    console.log('🔌 Browser disconnected:', socket.id);
+  // Initialize OSC connection (like Drum-E)
+  if (!isOSCConnected) {
+    try {
+      // Listen for feedback FROM Sonic Pi on port 12004
+      oscServer = new osc.Server(OSC_IN_PORT, '127.0.0.1');
+      // Send commands TO Sonic Pi on port 4560 
+      oscClient = new osc.Client('127.0.0.1', OSC_OUT_PORT);
+      
+      oscServer.on('message', (msg, rinfo) => {
+        socket.emit('message', msg);
+        
+        if (msg[0] === '/druminfo') {
+          // Beat position feedback - don't spam console
+        } else {
+          console.log('📡 OSC received:', msg[0]);
+        }
+      });
+      
+      oscClient.send('/status', 'MMI connected');
+      isOSCConnected = true;
+      
+      console.log('🎛️  OSC bridge active:');
+      console.log(`   Outgoing to Sonic Pi: port ${OSC_OUT_PORT}`);
+      console.log(`   Incoming from Sonic Pi: port ${OSC_IN_PORT}`);
+      
+    } catch (error) {
+      console.error('❌ OSC setup error:', error.message);
+    }
+  }
+  
+  // Handle messages from browser to Sonic Pi (like Drum-E)
+  socket.on('message', (msg) => {
+    if (oscClient && isOSCConnected) {
+      oscClient.send.apply(oscClient, msg);
+      
+      // Log pattern messages for debugging
+      if (msg[0].includes('/wek')) {
+        console.log('🎵 Pattern sent:', msg[0], `(${msg[1]?.length || 0} hits)`);
+      }
+    }
   });
   
-  // Future OSC bridge messages will be handled here
-  socket.on('mmi-pattern', (data) => {
-    console.log('📡 Pattern data received:', data);
-    // TODO: Forward to OSC bridge in Phase 4
+  // Handle client configuration (compatibility with original GUI)
+  socket.on('config', (config) => {
+    console.log('⚙️  MMI client config received');
+    socket.emit('connected', 1);
+  });
+  
+  // Handle client disconnect
+  socket.on('disconnect', () => {
+    console.log('🔌 MMI browser disconnected');
   });
 });
 
 // Start server
-server.listen(PORT, () => {
-  console.log(`✅ MMI-Muski-Drums server running on http://localhost:${PORT}`);
+server.listen(WEB_PORT, () => {
+  console.log(`✅ MMI-Muski-Drums server running on http://localhost:${WEB_PORT}`);
   console.log('📋 Server features:');
   console.log('   • Express web server serving dist/ files');
   console.log('   • Socket.io WebSocket server ready');
-  console.log('   • OSC bridge ports prepared for Phase 4');
+  console.log(`   • OSC bridge: ${OSC_OUT_PORT} → Sonic Pi → ${OSC_IN_PORT}`);
   
   // Auto-open browser (like Drum-E)
   console.log('🌐 Auto-opening browser...');
@@ -56,17 +106,17 @@ server.listen(PORT, () => {
   let command;
   
   if (platform === 'darwin') {
-    command = `open http://localhost:${PORT}`;
+    command = `open http://localhost:${WEB_PORT}`;
   } else if (platform === 'win32') {
-    command = `start http://localhost:${PORT}`;
+    command = `start http://localhost:${WEB_PORT}`;
   } else {
-    command = `xdg-open http://localhost:${PORT}`;
+    command = `xdg-open http://localhost:${WEB_PORT}`;
   }
   
   setTimeout(() => {
     exec(command, (error) => {
       if (error) {
-        console.log('❌ Could not auto-open browser. Please visit: http://localhost:' + PORT);
+        console.log('❌ Could not auto-open browser. Please visit: http://localhost:' + WEB_PORT);
       } else {
         console.log('✅ Browser opened automatically');
       }
@@ -77,10 +127,35 @@ server.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down MMI-Muski-Drums server...');
+  
+  if (isOSCConnected && oscServer) {
+    try {
+      oscServer.kill();
+      oscClient.kill();
+      console.log('✅ OSC bridge shut down');
+    } catch (error) {
+      console.log('OSC cleanup error:', error.message);
+    }
+  }
+  
   server.close(() => {
     console.log('✅ Server shut down gracefully');
     process.exit(0);
   });
 });
 
-console.log('✅ Server initialized and ready');
+// Error handling
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught exception:', error.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+});
+
+console.log('🥁 MMI-Muski-Drums Server Starting...');
+console.log('========================');
+console.log(`Web interface: http://localhost:${WEB_PORT}`);
+console.log(`OSC Bridge: ${OSC_OUT_PORT} → Sonic Pi → ${OSC_IN_PORT}`);
+console.log('========================');
+console.log('Ready for connections!');

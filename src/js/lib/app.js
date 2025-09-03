@@ -3,6 +3,7 @@ import MuskiDrumsManager from '../../../vendor/muski-drums/src/js/muski-drums-ma
 // eslint-disable-next-line import/no-relative-packages
 import MuskiDrums from '../../../vendor/muski-drums/src/js/muski-drums';
 import PatternDiagram from './pattern-diagram';
+import OSCClient from './osc-client';
 
 export default class MuskiDrumsApp {
   constructor(config) {
@@ -14,6 +15,11 @@ export default class MuskiDrumsApp {
     this.shouldRegeneratePattern = false;
     this.loopsPlayedSinceLastInput = 0;
     this.element = document.createElement('div');
+    
+    // Initialize OSC client for Sonic Pi integration
+    this.oscClient = new OSCClient();
+    this.oscClient.onConnect(this.handleOSCConnection.bind(this));
+    this.oscClient.onMessage(this.handleOSCMessage.bind(this));
     this.element.classList.add('muski-drums-app');
     if (this.config.app.theme) {
       this.element.classList.add(`theme-${this.config.app.theme}`);
@@ -211,6 +217,9 @@ export default class MuskiDrumsApp {
       this.shouldRegeneratePattern = true;
       this.loopsPlayedSinceLastInput = 0;
     }
+    
+    // Send updated pattern to OSC bridge
+    this.sendCurrentPatternToOSC();
   }
 
   updateControls() {
@@ -243,5 +252,86 @@ export default class MuskiDrumsApp {
   handleIdleTimeout() {
     this.stopDrumMachine();
     this.clearSequencer();
+  }
+
+  // OSC Connection handler
+  handleOSCConnection(connected) {
+    console.log('OSC Connection:', connected ? 'Connected ✅' : 'Disconnected ❌');
+    // Could update UI status indicator here in the future
+  }
+
+  // OSC Message handler (beat feedback from Sonic Pi)
+  handleOSCMessage(message) {
+    if (message.type === 'beat') {
+      console.log('Beat feedback:', message.step, message.patternType);
+      // Handle beat feedback for visual sync (future enhancement)
+    }
+  }
+
+  // Send current MMI pattern to OSC bridge → Sonic Pi
+  sendCurrentPatternToOSC() {
+    if (!this.oscClient || !this.oscClient.isReady()) {
+      console.log('OSC not ready, skipping pattern send');
+      return;
+    }
+
+    if (!this.drumMachine || !this.drumMachine.sequencer) {
+      console.log('Drum machine not ready, skipping pattern send');
+      return;
+    }
+
+    // Get current pattern from MMI sequencer
+    const sequence = this.drumMachine.sequencer.getSequence();
+    
+    // Convert MMI format to sonic-pi-receiver.rb expected format
+    const notes = [];
+    const steps = [];
+    
+    if (sequence && Array.isArray(sequence)) {
+      sequence.forEach((stepNotes, stepIndex) => {
+        if (stepNotes && Array.isArray(stepNotes) && stepNotes.length > 0) {
+          stepNotes.forEach(note => {
+            // Map MMI note IDs to MIDI notes (starting from 36 for kick)
+            const midiNote = this.mapMMINotesToMIDI(note);
+            notes.push(midiNote);
+            steps.push(stepIndex);
+          });
+        }
+      });
+    }
+    
+    console.log('Converting MMI pattern:', { notes, steps });
+    console.log('Sequence length:', sequence ? sequence.length : 0);
+    
+    // Send to generated track (since MMI is the AI generator)
+    this.oscClient.sendPattern(notes, steps, true);
+    this.oscClient.setPlayMode(0); // Play generated only
+  }
+
+  // Map MMI drum IDs to MIDI note numbers
+  mapMMINotesToMIDI(mmiNoteId) {
+    // MMI uses drum IDs like 'kick', 'snare', etc.
+    // Map to standard MIDI drum notes starting at 36 (kick)
+    const drumMapping = {
+      'kick': 36,       // C1 - Kick drum
+      'snare': 38,      // D1 - Snare
+      'hihat': 42,      // F#1 - Hi-hat closed
+      'openhat': 46,    // A#1 - Hi-hat open
+      'tom1': 41,       // F1 - Tom low
+      'tom2': 43,       // G1 - Tom floor
+      'tom3': 45,       // A1 - Tom mid
+      'crash': 49,      // C#2 - Crash
+      'ride': 51        // D#2 - Ride
+    };
+    
+    // Return mapped MIDI note or fallback to 36 + ID if numeric
+    if (drumMapping[mmiNoteId]) {
+      return drumMapping[mmiNoteId];
+    } else if (typeof mmiNoteId === 'number') {
+      return 36 + mmiNoteId; // Offset numeric IDs
+    } else {
+      console.warn('Unknown MMI drum ID:', mmiNoteId, 'defaulting to kick (36)');
+      return 36; // Default to kick
+    }
   }
 }

@@ -23,6 +23,10 @@
     {
       "from": "config",
       "to": "../config"
+    },
+    {
+      "from": "src/socket.io/socket.io.js",
+      "to": "../socket.io/socket.io.js"
     }
   ]
 }
