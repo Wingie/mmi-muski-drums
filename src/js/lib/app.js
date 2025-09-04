@@ -210,12 +210,17 @@ export default class MuskiDrumsApp {
   handleDrumMachineStep(step) {
     if (step === 0) {
       this.currentLoopPlayCount += 1;
+      console.log(`🔁 Loop ${this.currentLoopPlayCount} | Idle: ${this.loopsPlayedSinceLastInput} | Mode: ${this.generationMode} | ShouldRegen: ${this.shouldRegeneratePattern}`);
+      
       if (this.loopsPlayedSinceLastInput >= this.config.app.maxIdleLoops) {
+        console.log('⏹️ Stopping due to max idle loops reached');
         this.stopDrumMachine();
       } else {
         this.loopsPlayedSinceLastInput += 1;
 
-        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 4)) {
+        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 12)) {
+          console.log('🎵 Triggering regeneration:', { shouldRegen: this.shouldRegeneratePattern, loopCount: this.currentLoopPlayCount, mode: this.generationMode });
+          
           if (this.generationMode === 'ai') {
             this.drumMachine.generateUsingAI().then(sonicPiData => {
               console.log('🔄 Continuous AI generation complete, sending to Sonic Pi:', sonicPiData);
@@ -226,6 +231,7 @@ export default class MuskiDrumsApp {
           }
           this.shouldRegeneratePattern = false;
           this.currentLoopPlayCount = 0;
+          console.log('✅ Counters reset - next regeneration in 8 loops');
         }
       }
     }
