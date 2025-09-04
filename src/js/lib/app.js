@@ -218,7 +218,7 @@ export default class MuskiDrumsApp {
       } else {
         this.loopsPlayedSinceLastInput += 1;
 
-        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 12)) {
+        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 18)) {
           console.log('🎵 Triggering regeneration:', { shouldRegen: this.shouldRegeneratePattern, loopCount: this.currentLoopPlayCount, mode: this.generationMode });
           
           if (this.generationMode === 'ai') {
