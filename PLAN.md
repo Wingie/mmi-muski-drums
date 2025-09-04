@@ -173,28 +173,27 @@ sendPattern(notes, steps, isFillerPattern = false) {
 **File**: `src/js/lib/app.js`
 
 ```javascript
+// Pattern switching configuration
+const PATTERN_CYCLE = {
+  totalLoops: 20,
+  switches: {
+    8: { mode: 1, description: 'first filler section' },
+    10: { mode: 0, description: 'back to original' },
+    18: { mode: 1, description: 'second filler section' },
+    20: { mode: 0, description: 'reset to original before regeneration' }
+  }
+};
+
 handleDrumMachineStep(step) {
   if (step === 0) {
     this.currentLoopPlayCount += 1;
     console.log(`🔁 Loop ${this.currentLoopPlayCount} | Idle: ${this.loopsPlayedSinceLastInput} | Mode: ${this.generationMode}`);
     
-    // Dynamic play mode switching for 20-loop cycle (8 original + 2 filler + 8 original + 2 filler)
-    if (this.currentLoopPlayCount === 8) {
-      // Switch to filler at loop 8
-      this.oscClient.setPlayMode(1);  // Filler pattern
-      console.log('🔀 Switched to filler pattern at loop 8');
-    } else if (this.currentLoopPlayCount === 10) {
-      // Switch back to original at loop 10 (after 2 loops of filler)
-      this.oscClient.setPlayMode(0);  // Original pattern
-      console.log('🔀 Switched back to original pattern at loop 10');
-    } else if (this.currentLoopPlayCount === 18) {
-      // Switch to filler at loop 18 (second filler section)
-      this.oscClient.setPlayMode(1);  // Filler pattern
-      console.log('🔀 Switched to filler pattern at loop 18');
-    } else if (this.currentLoopPlayCount === 20) {
-      // Switch back to original at loop 20 (before regeneration)
-      this.oscClient.setPlayMode(0);  // Original pattern
-      console.log('🔀 Switched back to original pattern at loop 20');
+    // Dynamic play mode switching using configuration
+    const switchConfig = PATTERN_CYCLE.switches[this.currentLoopPlayCount];
+    if (switchConfig) {
+      this.oscClient.setPlayMode(switchConfig.mode);
+      console.log(`🔀 Loop ${this.currentLoopPlayCount}: Switched to mode ${switchConfig.mode} (${switchConfig.description})`);
     }
     
     if (this.loopsPlayedSinceLastInput >= this.config.app.maxIdleLoops) {
@@ -202,8 +201,8 @@ handleDrumMachineStep(step) {
     } else {
       this.loopsPlayedSinceLastInput += 1;
 
-      // Regenerate every 20 loops (complete cycle: 8 original + 2 filler + 8 original + 2 filler)
-      if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 20)) {
+      // Regenerate every cycle
+      if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= PATTERN_CYCLE.totalLoops)) {
         if (this.generationMode === 'ai') {
           this.drumMachine.generateUsingAI().then(patternData => {
             console.log('🔄 Continuous dual AI generation complete:', patternData);
@@ -212,9 +211,7 @@ handleDrumMachineStep(step) {
         }
         this.shouldRegeneratePattern = false;
         this.currentLoopPlayCount = 0;
-        // Reset to original pattern for new cycle
-        this.oscClient.setPlayMode(0);
-        console.log('✅ Counters reset - next regeneration in 20 loops');
+        console.log(`✅ Counters reset - next regeneration in ${PATTERN_CYCLE.totalLoops} loops`);
       }
     }
   }

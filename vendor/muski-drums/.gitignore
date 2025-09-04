@@ -1,0 +1,9 @@
+node_modules/
+.babel-cache
+.env
+
+sounds/
+audio/
+checkpoints/
+
+/work
