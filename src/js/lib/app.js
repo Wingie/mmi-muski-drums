@@ -153,9 +153,9 @@ export default class MuskiDrumsApp {
     
     // Generate AI pattern and send to Sonic Pi when complete
     try {
-      await this.drumMachine.generateUsingAI();
-      console.log('🤖 AI generation complete, sending pattern to Sonic Pi');
-      this.sendCurrentPatternToOSC();
+      const sonicPiData = await this.drumMachine.generateUsingAI();
+      console.log('🤖 AI generation complete, sending pattern to Sonic Pi:', sonicPiData);
+      this.sendCurrentPatternToOSC(sonicPiData);
     } catch (error) {
       console.error('❌ AI generation failed:', error);
     }
@@ -217,7 +217,10 @@ export default class MuskiDrumsApp {
 
         if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 4)) {
           if (this.generationMode === 'ai') {
-            this.drumMachine.generateUsingAI();
+            this.drumMachine.generateUsingAI().then(sonicPiData => {
+              console.log('🔄 Continuous AI generation complete, sending to Sonic Pi:', sonicPiData);
+              this.sendCurrentPatternToOSC(sonicPiData);
+            });
           } else if (this.generationMode === 'random') {
             this.drumMachine.generateUsingRandomAlgorithm();
           }
@@ -319,44 +322,24 @@ export default class MuskiDrumsApp {
     }
   }
 
-  // Send current MMI pattern to OSC bridge → Sonic Pi
-  sendCurrentPatternToOSC() {
+  // Send MMI pattern to OSC bridge → Sonic Pi
+  sendCurrentPatternToOSC(sonicPiData) {
     if (!this.oscClient || !this.oscClient.isReady()) {
       console.log('OSC not ready, skipping pattern send');
       return;
     }
 
-    if (!this.drumMachine || !this.drumMachine.sequencer) {
-      console.log('Drum machine not ready, skipping pattern send');
-      return;
-    }
-
-    // Get current pattern from MMI sequencer
-    const sequence = this.drumMachine.sequencer.getSequence();
+    // Use provided Sonic Pi data directly (bypass sequencer read)
+    const { notes, steps } = sonicPiData;
     
-    // Verify we have complete 16-step pattern
-    console.log('📊 Complete sequencer state:', {
-      totalSteps: sequence ? sequence.length : 0,
-      userSteps: sequence ? sequence.slice(0, 6).map((step, i) => ({ step: i, notes: step.length })) : [],
-      aiSteps: sequence ? sequence.slice(6).map((step, i) => ({ step: i + 6, notes: step.length })) : []
+    console.log('📊 Sending complete pattern to Sonic Pi:', {
+      totalNotes: notes.length,
+      noteRange: notes.length > 0 ? `${Math.min(...notes)}-${Math.max(...notes)}` : 'none',
+      stepRange: steps.length > 0 ? `${Math.min(...steps)}-${Math.max(...steps)}` : 'none',
+      sampleNotes: notes.slice(0, 5),
+      sampleSteps: steps.slice(0, 5)
     });
     
-    // Convert MMI format to sonic-pi-receiver.rb expected format
-    const notes = [];
-    const steps = [];
-    
-    if (sequence && Array.isArray(sequence)) {
-      sequence.forEach((stepNotes, stepIndex) => {
-        if (stepNotes && Array.isArray(stepNotes)) {
-          stepNotes.forEach(note => {
-            // Map MMI note IDs to MIDI notes (starting from 36 for kick)
-            const midiNote = this.mapMMINotesToMIDI(note);
-            notes.push(midiNote);
-            steps.push(stepIndex);
-          });
-        }
-      });
-    }    
     // Send to original track (MMI is primary generator, not "filler")
     this.oscClient.sendPattern(notes, steps, false);  // Send as original pattern
     this.oscClient.setPlayMode(1);                    // Play original only
