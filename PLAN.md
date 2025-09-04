@@ -19,422 +19,138 @@ This plan provides a step-by-step approach to integrate Drum-E's advanced featur
 
 ---
 
-## Phase 1: Infrastructure Setup
-**Duration**: 1-2 days  
-**Goal**: Get server + build system working like Drum-E
+## Phase 2: OSC Bridge Integration ⚠️ CRITICAL FIXES NEEDED
+**Duration**: 2-3 hours remaining
+**Goal**: Complete MMI → sonic-pi-receiver.rb → Ableton integration 
 
-### Step 1.1: Add Server Dependencies
-**Files**: `package.json`
-```bash
-# Add to existing MMI package.json
-npm install express socket.io node-osc
-npm install --save-dev nodemon
-```
+**✅ CURRENT STATUS** (What's Actually Working):
+- [✅] **WebSocket Bridge**: Server connects browser to OSC (server.js)
+- [✅] **OSC Client**: Browser OSC client implemented (osc-client.js)  
+- [✅] **Pattern Transmission**: Sends on AI/Random completion only (app.js:158, 181)
+- [✅] **Beat Sync Infrastructure**: `handleBeatFeedback()` method ready (app.js:291-310)
+- [✅] **MIDI Note Mapping**: MMI drumMap matches sonic-pi-receiver.rb exactly
 
-**Modify package.json scripts**:
-```json
-{
-  "scripts": {
-    "build": "npx webpack",
-    "watch": "npx webpack --watch", 
-    "start": "npm run build && node server.js",
-    "dev": "nodemon server.js",
-    "build-only": "npx webpack"
-  }
-}
-```
+**❌ CRITICAL ISSUES** (What's Breaking):
+- [❌] **Audio Still Playing**: `silenceMMIAudio()` method called but not implemented
+- [❌] **Wrong OSC Routing**: MMI sends to filler (`/wek3/outputs`) instead of original (`/wek/outputs`)
+- [❌] **Wrong Play Mode**: MMI sends `playMode=0` (play filler) should be `playMode=1` (play original)
 
-**✅ Test Checkpoint 1.1**: 
-- [ ] `npm install` completes without errors
-- [ ] Existing `npm run build` still works
-- [ ] New scripts are available in package.json
+**ANALYSIS**: Your sonic-pi-receiver.rb logs show "playGen FILLER" because MMI sends patterns to the wrong route. MMI should use the "original" pattern route since it's the primary generator, not a filler system.
 
-### Step 1.2: Create Basic Server
-**Files**: `server.js` (new)
+### REMAINING WORK TO COMPLETE PHASE 2
 
+### Step 2.1: Implement Audio Silencing (5 minutes)
+**File**: `src/js/lib/app.js:313` 
+**Issue**: Method call exists but method is not implemented
+
+**Fix needed**:
 ```javascript
-// Basic Express server serving webpack dist files
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const path = require('path');
-
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
-
-const PORT = 8080;
-
-// Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
-server.listen(PORT, () => {
-  console.log(`🎵 MMI-Muski-Drums server running on http://localhost:${PORT}`);
-  
-  // Auto-open browser (like Drum-E)
-  const { exec } = require('child_process');
-  const command = process.platform === 'darwin' ? 
-    `open http://localhost:${PORT}` : 
-    `start http://localhost:${PORT}`;
-    
-  setTimeout(() => {
-    exec(command, (error) => {
-      if (error) console.log('Visit: http://localhost:' + PORT);
-    });
-  }, 1000);
-});
-
-console.log('✅ Server initialized');
-```
-
-**✅ Test Checkpoint 1.2**:
-- [ ] `npm run start` launches server
-- [ ] Browser auto-opens to localhost:8080  
-- [ ] MMI interface loads correctly
-- [ ] All existing functionality works (AI generate, random, etc.)
-- [ ] No JavaScript errors in browser console
-
-
-### Step 1.3: Adjust Webpack Configuration
-**Files**: `webpack.config.js`
-
-```javascript
-// Ensure proper dist/ output for server
-module.exports = {
-  // ... existing config
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'assets/[name].[contenthash].js',
-    clean: true // Clean dist/ on each build
-  },
-  // ... rest of existing config
-};
-```
-
-**✅ Test Checkpoint 1.3**:
-- [ ] `npm run build` creates dist/ directory
-- [ ] `npm run start` serves files from dist/
-- [ ] Hot reload works with `npm run dev`
-- [ ] All assets load correctly (CSS, JS, sounds, models)
-
-**📋 Phase 1 Complete When**:
-- [✅] Single `npm start` command works
-- [✅] Browser auto-opens and shows working MMI interface
-- [✅] All existing MMI functionality intact  
-- [✅] Server logs show successful startup (bridge server ports check)
-
----
-
-## Phase 2: OSC Bridge Integration (PRIORITY) 
-**Duration**: 1 day
-**Goal**: Connect MMI drums to YOUR sonic-pi-receiver.rb → Ableton (NO UI changes)
-
-**CORRECTED OSC Architecture (Based on Working Drum-E Analysis):**
-- **Outgoing TO Sonic Pi**: port 4560 (your sonic-pi-receiver.rb receives commands here)
-- **Incoming FROM Sonic Pi**: port 12004 (your sonic-pi-receiver.rb sends feedback here)
-- **Generated Pattern Track**: MMI patterns map to /wek3/outputs (generated) since MMI doesn't have original/generated split
-- **Play Mode**: Set to 0 (play generated only) since MMI is the AI generator
-
-### Step 2.1: Add OSC Client to Browser
-**Files**: `src/js/lib/osc-client.js` (new), `src/js/lib/app.js`
-
-**Create osc-client.js (copying working Drum-E architecture)**:
-```javascript
-export default class OSCClient {
-  constructor() {
-    this.socket = null;
-    this.isConnected = false;
-    this.connectionCallbacks = [];
-    this.messageCallbacks = [];
-    this.init();
+// Add actual implementation to app.js
+silenceMMIAudio() {
+  if (this.drumsManager && this.drumsManager.sampler) {
+    // Verified Tone.js approach - master volume mute
+    this.drumsManager.sampler.volume.value = -Infinity;
+    console.log('🔇 MMI audio silenced - OSC only mode');
+  } else {
+    console.warn('⚠️ Cannot silence - sampler not initialized yet');
   }
-  
-  init() {
-    console.log('🔌 Initializing MMI OSC connection...');
-    this.socket = io();
-    
-    this.socket.on('connect', () => {
-      console.log('✅ Connected to MMI server');
-      this.isConnected = true;
-      this.connectionCallbacks.forEach(callback => callback(true));
-      
-      // Send initial configuration like Drum-E
-      this.socket.emit('config', {
-        server: { port: 12004, host: '127.0.0.1' },
-        client: { port: 4560, host: '127.0.0.1' }
-      });
-      
-      // Initialize with empty pattern
-      setTimeout(() => {
-        this.initializeOSCSequence();
-      }, 100);
-    });
-    
-    this.socket.on('disconnect', () => {
-      console.log('❌ Disconnected from MMI server');
-      this.isConnected = false;
-      this.connectionCallbacks.forEach(callback => callback(false));
-    });
-    
-    // Handle beat feedback from Sonic Pi
-    this.socket.on('message', (msg) => {
-      this.receiveOsc(msg[0], msg.slice(1));
-    });
-  }
-  
-  // Send OSC message to Sonic Pi
-  sendOSC(address, ...args) {
-    if (!this.isConnected) {
-      console.warn('⚠️ Cannot send OSC - not connected');
-      return false;
-    }
-    
-    const message = [address, ...args];
-    this.socket.emit('message', message);
-    console.log('🎵 Sent to Sonic Pi:', address, args.length > 0 ? `(${args.length} items)` : '');
-    return true;
-  }
-  
-  // Initialize OSC sequence like Drum-E
-  initializeOSCSequence() {
-    console.log('🔄 Initializing OSC sequence for Sonic Pi startup...');
-    
-    // Step 1: Send kit selection (required for sync)
-    this.sendOSC('/wek6/outputs', 0);
-    
-    // Step 2: Send empty generated pattern (MMI will fill this)
-    this.sendPattern([], [], true);  // Generated pattern
-    this.setPlayMode(0);  // Play generated only (MMI is the generator)
-  }
-  
-  // Send pattern data (MMI patterns go to "generated" track)
-  sendPattern(notes, steps, isGenerated = true) {
-    const noteAddress = '/wek3/outputs';  // Always generated for MMI
-    const stepAddress = '/wek4/outputs';  // Always generated for MMI
-    
-    console.log('🥁 Sending MMI pattern:', `${notes.length} hits over ${Math.max(...steps) + 1 || 16} steps`);
-    
-    this.sendOSC(noteAddress, notes);
-    this.sendOSC(stepAddress, steps);
-  }
-  
-  // Set play mode (0 = generated only, perfect for MMI)
-  setPlayMode(mode) {
-    console.log('▶️ Setting play mode:', ['Generated', 'Original', 'Both'][mode]);
-    this.sendOSC('/wek5/outputs', mode);
-  }
-  
-  // Set drum kit
-  setKit(kitIndex) {
-    console.log('🥁 Setting drum kit:', kitIndex);
-    this.sendOSC('/wek6/outputs', kitIndex);
-  }
-  
-  // Handle beat feedback from Sonic Pi
-  receiveOsc(address, value) {
-    if (address === '/druminfo') {
-      let step = value[0];  // step position (0-15)
-      let patternType = value[1];  // 0=original, 1=generated
-      
-      console.log(`🎯 Beat feedback: step=${step}, type=${patternType}`);
-      
-      // Trigger visual updates for MMI
-      this.messageCallbacks.forEach(callback => callback({
-        type: 'beat',
-        step: step,
-        patternType: patternType
-      }));
-    }
-  }
-  
-  // Callback registration
-  onConnect(callback) { this.connectionCallbacks.push(callback); }
-  onMessage(callback) { this.messageCallbacks.push(callback); }
-  isReady() { return this.isConnected; }
 }
 ```
 
 **✅ Test Checkpoint 2.1**:
-- [ ] WebSocket connection establishes to server
-- [ ] OSC initialization sequence sends correctly
-- [ ] No errors in browser console
-- [ ] Connection status updates correctly
+- [ ] No audio plays from browser after AI/Random generation
+- [ ] Patterns still transmit to Sonic Pi correctly
+- [ ] Visual sequencer still highlights steps
+- [ ] MMI operates as pure OSC controller
 
-### Step 2.2: Add OSC Bridge to Server (Copy Working Drum-E Server Architecture)
-**Files**: `server.js`
+### Step 2.2: Fix OSC Pattern Routing (10 minutes)  
+**File**: `src/js/lib/osc-client.js:214-222`
+**Issue**: MMI patterns sent to "filler" route, causing wrong playback mode
 
-**Enhance server with EXACT Drum-E OSC setup**:
+**Current (incorrect)**:
 ```javascript
-// Add to existing server.js after express setup
-const osc = require('node-osc');
+sendPattern(notes, steps, isGenerated = true) {
+  const noteAddress = '/wek3/outputs';  // ← Wrong: filler route
+  const stepAddress = '/wek4/outputs';  // ← Wrong: filler route
+```
 
-// OSC Configuration (CORRECTED - matches working Drum-E)
-const OSC_OUT_PORT = 4560;  // TO Sonic Pi (where your receiver listens)
-const OSC_IN_PORT = 12004;  // FROM Sonic Pi (where your receiver sends feedback)
+**Fix needed**:
+```javascript
+sendPattern(notes, steps, isGenerated = false) {  // ← Default to original
+  const noteAddress = isGenerated ? '/wek3/outputs' : '/wek/outputs';    // ← Use original
+  const stepAddress = isGenerated ? '/wek4/outputs' : '/wek2/outputs';   // ← Use original
+  
+  console.log('🥁 Sending MMI pattern to:', noteAddress, `(${notes.length} hits)`);
+  this.sendOSC(noteAddress, notes);
+  this.sendOSC(stepAddress, steps);
+}
+```
 
-// OSC setup
-let oscServer, oscClient;
-let isOSCConnected = false;
-
-// Socket.IO connection handling (copied from working Drum-E)
-io.on('connection', (socket) => {
-  console.log('🔌 MMI browser connected');
-  
-  // Initialize OSC connection (like Drum-E)
-  if (!isOSCConnected) {
-    try {
-      // Listen for feedback FROM Sonic Pi on port 12004
-      oscServer = new osc.Server(OSC_IN_PORT, '127.0.0.1');
-      // Send commands TO Sonic Pi on port 4560 
-      oscClient = new osc.Client('127.0.0.1', OSC_OUT_PORT);
-      
-      oscServer.on('message', (msg, rinfo) => {
-        socket.emit('message', msg);
-        
-        if (msg[0] === '/druminfo') {
-          // Beat position feedback - don't spam console
-        } else {
-          console.log('📡 OSC received:', msg[0]);
-        }
-      });
-      
-      oscClient.send('/status', 'MMI connected');
-      isOSCConnected = true;
-      
-      console.log('🎛️  OSC bridge active:');
-      console.log(`   Outgoing to Sonic Pi: port ${OSC_OUT_PORT}`);
-      console.log(`   Incoming from Sonic Pi: port ${OSC_IN_PORT}`);
-      
-    } catch (error) {
-      console.error('❌ OSC setup error:', error.message);
-    }
-  }
-  
-  // Handle messages from browser to Sonic Pi (like Drum-E)
-  socket.on('message', (msg) => {
-    if (oscClient && isOSCConnected) {
-      oscClient.send.apply(oscClient, msg);
-      
-      // Log pattern messages for debugging
-      if (msg[0].includes('/wek')) {
-        console.log('🎵 Pattern sent:', msg[0], `(${msg[1]?.length || 0} hits)`);
-      }
-    }
-  });
-  
-  // Handle client configuration (compatibility)
-  socket.on('config', (config) => {
-    console.log('⚙️  MMI client config received');
-    socket.emit('connected', 1);
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('🔌 MMI browser disconnected');
-  });
-});
+**And update app.js calls**:
+```javascript
+// In app.js:348-349
+this.oscClient.sendPattern(notes, steps, false);  // ← Send as original pattern  
+this.oscClient.setPlayMode(1);                    // ← Play original only
 ```
 
 **✅ Test Checkpoint 2.2**:
-- [ ] Server starts without OSC errors
-- [ ] OSC client connects to port 4560 (TO Sonic Pi)
-- [ ] OSC server listens on port 12004 (FROM Sonic Pi)
-- [ ] WebSocket to OSC bridge working
-- [ ] Your sonic-pi-receiver.rb should see connection messages
+- [ ] Sonic Pi logs show "playGen NORMAL" instead of "playGen FILLER"
+- [ ] Beat feedback shows pattern type 0 (original) instead of 1 (filler)
+- [ ] MIDI output to Ableton still works correctly
+- [ ] No changes needed to sonic-pi-receiver.rb
 
-### Step 2.3: Integrate Pattern Transmission in MMI App
-**Files**: `src/js/lib/app.js`
+### Step 2.3: Final Integration Testing (10 minutes)
+**Goal**: Verify complete MMI → Sonic Pi → Ableton workflow
 
-**Add OSC client to MuskiDrumsApp and send patterns on changes**:
-```javascript
-// Add to MuskiDrumsApp constructor
-import OSCClient from './osc-client.js';
+**Test Sequence**:
+1. **Start Systems**: 
+   - Load `sonic-pi-receiver.rb` in Sonic Pi (should show "Drum-E MIDI Receiver Started")
+   - Run `npm run dev` in MMI directory (should auto-open browser)
+   - Check Ableton Live has IAC Driver Bus 1 on MIDI track
 
-constructor(element) {
-  // ... existing constructor code ...
-  
-  // Initialize OSC client
-  this.oscClient = new OSCClient();
-  this.oscClient.onConnect(this.handleOSCConnection.bind(this));
-  this.oscClient.onMessage(this.handleOSCMessage.bind(this));
-}
+2. **Generate Pattern**:
+   - Click "with AI" button in MMI
+   - Should see: "🤖 AI generation complete, sending pattern to Sonic Pi" 
+   - Should NOT hear audio from browser (silenced)
 
-// Add new methods
-handleOSCConnection(connected) {
-  console.log('OSC Connection:', connected ? 'Connected' : 'Disconnected');
-  // Update UI status if desired
-}
+3. **Verify Sonic Pi Reception**:
+   - Sonic Pi logs should show: "playGen NORMAL" (not "playGen FILLER")
+   - OSC feedback should show: `/druminfo, [step, 0]` (pattern type 0 = original)
 
-handleOSCMessage(message) {
-  if (message.type === 'beat') {
-    // Handle beat feedback for visual sync
-    console.log('Beat:', message.step, message.patternType);
-  }
-}
+4. **Verify MIDI Output**: 
+   - MIDI should appear in Ableton Live on channel 1
+   - Pattern should play through Ableton drums, not browser
 
-// Enhance pattern change detection to send OSC
-sendCurrentPatternToOSC() {
-  if (!this.oscClient || !this.oscClient.isReady()) {
-    console.log('OSC not ready, skipping pattern send');
-    return;
-  }
-  
-  // Get current pattern from MMI sequencer
-  const sequence = this.drumMachine.sequencer.getSequence();
-  
-  // Convert MMI format to YOUR sonic-pi-receiver.rb expected format
-  const notes = [];
-  const steps = [];
-  
-  sequence.forEach((stepNotes, stepIndex) => {
-    if (stepNotes && stepNotes.length > 0) {
-      stepNotes.forEach(note => {
-        notes.push(note);
-        steps.push(stepIndex);
-      });
-    }
-  });
-  
-  console.log('Converting MMI pattern:', { notes, steps });
-  
-  // Send to generated track (since MMI is the AI generator)
-  this.oscClient.sendPattern(notes, steps, true);
-  this.oscClient.setPlayMode(0); // Play generated only
-}
-
-// Hook into existing pattern change events
-onSequenceUpdate() {
-  // ... existing sequence update code ...
-  
-  // Send updated pattern to OSC
-  this.sendCurrentPatternToOSC();
-}
-```
-
-**Find and enhance existing pattern change triggers**:
-- AI generation completion
-- Random pattern generation  
-- Manual pattern edits
-- Pattern loading
+5. **Verify Beat Sync**:
+   - MMI sequencer highlight should move in sync with Sonic Pi playback
+   - Visual sequencer tracks beat position from OSC feedback
 
 **✅ Test Checkpoint 2.3**:
-- [ ] MMI pattern changes trigger OSC transmission
-- [ ] Your sonic-pi-receiver.rb receives /wek3/outputs and /wek4/outputs messages
-- [ ] MIDI appears in Ableton Live on channel 1
-- [ ] Beat feedback returns from Sonic Pi
-- [ ] Pattern changes are audible in Ableton
+- [ ] Browser audio completely silenced ✅
+- [ ] Sonic Pi logs show "playGen NORMAL" ✅  
+- [ ] MIDI appears in Ableton Live ✅
+- [ ] Beat sync highlight works in MMI ✅
+- [ ] No changes needed to sonic-pi-receiver.rb ✅
 
-**📋 Phase 2 Complete When**:
-- [ ] ✅ MMI browser connects to server via WebSocket
-- [ ] ✅ Server bridges WebSocket to OSC (ports 4560 out, 12004 in)
-- [ ] ✅ MMI patterns automatically transmit to YOUR sonic-pi-receiver.rb  
-- [ ] ✅ MIDI output reaches Ableton Live without any receiver changes
-- [ ] ✅ Beat feedback returns from Sonic Pi and updates MMI UI
-- [ ] ✅ Pattern evolution/changes are immediately audible
-- [ ] ✅ No changes needed to your existing sonic-pi-receiver.rb script
+**📋 Phase 2 Complete When** (Updated Status):
+- [✅] **MMI browser connects to server via WebSocket** - WORKING
+- [✅] **Server bridges WebSocket to OSC (ports 4560 out, 12004 in)** - WORKING  
+- [❌] **MMI patterns automatically transmit to sonic-pi-receiver.rb** - NEEDS OSC ROUTING FIX
+- [❌] **MIDI output reaches Ableton Live** - SHOULD WORK AFTER ROUTING FIX
+- [✅] **Beat sync infrastructure ready** - handleBeatFeedback() IMPLEMENTED
+- [❌] **Browser audio silenced** - NEEDS silenceMMIAudio() IMPLEMENTATION  
+- [✅] **No changes needed to sonic-pi-receiver.rb** - CONFIRMED
+
+**REMAINING**: 2 small fixes (15 minutes total):
+1. Implement `silenceMMIAudio()` method (5 min)
+2. Fix OSC routing to use original pattern route (10 min)
+
+**EXPECTED OUTCOME**: 
+- MMI generates AI patterns silently 
+- Patterns route to Sonic Pi as "original" (not "filler")
+- Sonic Pi logs show "playGen NORMAL"  
+- MIDI plays through Ableton, browser stays silent
+- Beat sync highlights MMI sequencer in real-time
 
 ---
 

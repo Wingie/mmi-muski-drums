@@ -28,7 +28,6 @@ export default class MuskiDrumsApp {
     if (this.config.app.idleClearSeconds && this.config.app.idleClearSeconds > 0) {
       this.setIdleTimeout();
       $(document).on('mousemove keydown touchstart', () => {
-        // Only reset the idle timeout if it is set
         if (this.idleTimeout) {
           this.setIdleTimeout();
         }
@@ -55,12 +54,13 @@ export default class MuskiDrumsApp {
         preset: null,
       }
     );
+    this.silenceMMIAudio(); 
     // Set volumes
-    this.config.drumMachine.drums.forEach((drum) => {
-      if (drum.vol !== undefined) {
-        this.drumMachine.setDrumVolume(drum.id, drum.vol);
-      }
-    });
+    // this.config.drumMadchine.drums.forEach((drum) => {
+    //   // if (drum.vol !== undefined) {
+    //     this.drumMachine.setDrumVolume(drum.id, 0);
+    //   // }
+    // });
 
     this.drumMachine.events.on('start', this.handleDrumMachineStart.bind(this));
     this.drumMachine.events.on('step', this.handleDrumMachineStep.bind(this));
@@ -68,6 +68,7 @@ export default class MuskiDrumsApp {
     this.drumMachine.sequencer.events.on('update', this.handleSequenceUpdate.bind(this));
 
     this.element.append(this.drumMachine.$element[0]);
+    
     const controls = document.createElement('div');
     controls.classList.add('muski-drums-app-controls');
 
@@ -139,7 +140,7 @@ export default class MuskiDrumsApp {
     this.drumMachine.sequencer.clear();
   }
 
-  handleAiButton() {
+  async handleAiButton() {
     if (!this.drumMachine) {
       throw new Error('Drum machine is not initialized.');
     }
@@ -149,6 +150,16 @@ export default class MuskiDrumsApp {
     if (!this.drumMachine.isPlaying()) {
       this.drumMachine.start();
     }
+    
+    // Generate AI pattern and send to Sonic Pi when complete
+    try {
+      await this.drumMachine.generateUsingAI();
+      console.log('🤖 AI generation complete, sending pattern to Sonic Pi');
+      this.sendCurrentPatternToOSC();
+    } catch (error) {
+      console.error('❌ AI generation failed:', error);
+    }
+    
     this.updateControls();
   }
 
@@ -162,6 +173,16 @@ export default class MuskiDrumsApp {
     if (!this.drumMachine.isPlaying()) {
       this.drumMachine.start();
     }
+    
+    // Generate random pattern and send to Sonic Pi when complete
+    try {
+      this.drumMachine.generateUsingRandomAlgorithm();
+      console.log('🎲 Random generation complete, sending pattern to Sonic Pi');
+      this.sendCurrentPatternToOSC();
+    } catch (error) {
+      console.error('❌ Random generation failed:', error);
+    }
+    
     this.updateControls();
   }
 
@@ -218,8 +239,6 @@ export default class MuskiDrumsApp {
       this.loopsPlayedSinceLastInput = 0;
     }
     
-    // Send updated pattern to OSC bridge
-    this.sendCurrentPatternToOSC();
   }
 
   updateControls() {
@@ -263,8 +282,41 @@ export default class MuskiDrumsApp {
   // OSC Message handler (beat feedback from Sonic Pi)
   handleOSCMessage(message) {
     if (message.type === 'beat') {
-      console.log('Beat feedback:', message.step, message.patternType);
-      // Handle beat feedback for visual sync (future enhancement)
+      console.log('🎯 Beat feedback:', message.step, message.patternType);
+      this.handleBeatFeedback(message.step, message.patternType);
+    }
+  }
+
+  // Handle beat feedback from Sonic Pi (like Drum-E)
+  handleBeatFeedback(stepPosition, patternType) {
+    console.log(`🎵 Syncing MMI sequencer to Sonic Pi: step=${stepPosition}, type=${patternType}`);
+    
+    // Update MMI sequencer position to match Sonic Pi
+    if (this.drumMachine && this.drumMachine.sequencer) {
+      try {
+        // Set sequencer step position like Drum-E (stepPosition corresponds to 0-15 range)
+        const adjustedStep = Math.max(0, Math.min(15, stepPosition));
+        
+        // Use MMI sequencer's setActiveColumn to highlight current beat position
+        this.drumMachine.sequencer.setActiveColumn(adjustedStep);
+        
+        console.log(`✅ MMI sequencer synced to column: ${adjustedStep}`);
+      } catch (error) {
+        console.error('❌ Failed to sync MMI sequencer:', error);
+      }
+    } else {
+      console.warn('⚠️ MMI drum machine or sequencer not available for sync');
+    }
+  }
+
+  // Silence MMI browser audio for pure OSC controller mode
+  silenceMMIAudio() {
+    if (this.drumsManager && this.drumsManager.sampler) {
+      // Verified Tone.js approach - master volume mute
+      this.drumsManager.sampler.volume.value = -Infinity;
+      console.log('🔇 MMI audio silenced - OSC only mode');
+    } else {
+      console.warn('⚠️ Cannot silence - sampler not initialized yet');
     }
   }
 
@@ -303,9 +355,9 @@ export default class MuskiDrumsApp {
     console.log('Converting MMI pattern:', { notes, steps });
     console.log('Sequence length:', sequence ? sequence.length : 0);
     
-    // Send to generated track (since MMI is the AI generator)
-    this.oscClient.sendPattern(notes, steps, true);
-    this.oscClient.setPlayMode(0); // Play generated only
+    // Send to original track (MMI is primary generator, not "filler")
+    this.oscClient.sendPattern(notes, steps, false);  // Send as original pattern
+    this.oscClient.setPlayMode(1);                    // Play original only
   }
 
   // Map MMI drum IDs to MIDI note numbers

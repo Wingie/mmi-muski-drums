@@ -87,26 +87,26 @@ export default class OSCClient {
     this.sendOSC('/wek6/outputs', 0);
     console.log('🥁 Sent kit selection (kit 0)');
     
-    // Step 2: Initialize with empty generated pattern 
-    this.sendPattern([], [], true);  // Generated pattern (empty)
-    this.setPlayMode(0);  // Play generated only (MMI is the AI generator)
+    // Step 2: Initialize with empty original pattern (MMI is primary generator)
+    this.sendPattern([], [], false);  // Original pattern (empty)
+    this.setPlayMode(1);  // Play original only (MMI patterns as original)
     
-    console.log('🎵 MMI initialized as generated pattern source');
+    console.log('🎵 MMI initialized as original pattern source');
   }
   
-  // Send pattern data (MMI patterns go to "generated" track)
-  sendPattern(notes, steps, isGenerated = true) {
-    // MMI always sends to generated track since it's the AI generator
-    const noteAddress = '/wek3/outputs';  // Generated track notes
-    const stepAddress = '/wek4/outputs';  // Generated track steps
+  // Send pattern data (MMI patterns go to "original" track - MMI is primary generator)
+  sendPattern(notes, steps, isGenerated = false) {
+    // MMI uses original track route since it's the primary pattern generator (not "filler")
+    const noteAddress = isGenerated ? '/wek3/outputs' : '/wek/outputs';    // Use original for MMI
+    const stepAddress = isGenerated ? '/wek4/outputs' : '/wek2/outputs';   // Use original for MMI
     
-    console.log('🥁 Sending MMI pattern:', `${notes.length} hits over ${Math.max(...steps) + 1 || 16} steps`);
+    console.log('🥁 Sending MMI pattern to:', noteAddress, `(${notes.length} hits over ${Math.max(...steps) + 1 || 16} steps)`);
     
     this.sendOSC(noteAddress, notes);
     this.sendOSC(stepAddress, steps);
   }
   
-  // Set play mode (0 = generated only, perfect for MMI)
+  // Set play mode (1 = original only, perfect for MMI as primary generator)
   setPlayMode(mode) {
     console.log('▶️ Setting play mode:', ['Generated', 'Original', 'Both'][mode]);
     this.sendOSC('/wek5/outputs', mode);
