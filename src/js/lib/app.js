@@ -380,10 +380,7 @@ export default class MuskiDrumsApp {
     if (drumMapping[mmiNoteId]) {
       return drumMapping[mmiNoteId];
     } else if (typeof mmiNoteId === 'number') {
-      return 36 + mmiNoteId; // Offset numeric IDs
-    } else {
-      console.warn('Unknown MMI drum ID:', mmiNoteId, 'defaulting to kick (36)');
-      return 36; // Default to kick
+      return mmiNoteId; // Offset numeric IDs
     }
   }
 }

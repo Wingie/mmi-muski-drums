@@ -32,10 +32,12 @@ app.get('/', (req, res) => {
 // OSC setup
 let oscServer, oscClient;
 let isOSCConnected = false;
+let currentSocket = null;  // Track current active socket for OSC forwarding
 
 // Socket.IO connection handling (copied from working Drum-E)
 io.on('connection', (socket) => {
   console.log('🔌 MMI browser connected');
+  currentSocket = socket;  // Update current active socket
   
   // Initialize OSC connection (like Drum-E)
   if (!isOSCConnected) {
@@ -45,11 +47,14 @@ io.on('connection', (socket) => {
       // Send commands TO Sonic Pi on port 4560 
       oscClient = new osc.Client('127.0.0.1', OSC_OUT_PORT);
       
-      oscServer.on('message', (msg, rinfo) => {
-        socket.emit('message', msg);
+      oscServer.on('message', (msg) => {
+        // Forward to current active socket (fixes refresh issue)
+        if (currentSocket && currentSocket.connected) {
+          currentSocket.emit('message', msg);
+        }
         
         if (msg[0] === '/druminfo') {
-          // Beat position feedback - don't spam console
+          // console.log("drumino");
         } else {
           console.log('📡 OSC received:', msg[0]);
         }
@@ -88,6 +93,9 @@ io.on('connection', (socket) => {
   // Handle client disconnect
   socket.on('disconnect', () => {
     console.log('🔌 MMI browser disconnected');
+    if (currentSocket === socket) {
+      currentSocket = null;  // Clear reference to disconnected socket
+    }
   });
 });
 
@@ -129,13 +137,9 @@ process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down MMI-Muski-Drums server...');
   
   if (isOSCConnected && oscServer) {
-    try {
       oscServer.kill();
       oscClient.kill();
       console.log('✅ OSC bridge shut down');
-    } catch (error) {
-      console.log('OSC cleanup error:', error.message);
-    }
   }
   
   server.close(() => {
@@ -144,14 +148,6 @@ process.on('SIGINT', () => {
   });
 });
 
-// Error handling
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught exception:', error.message);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
-});
 
 console.log('🥁 MMI-Muski-Drums Server Starting...');
 console.log('========================');
