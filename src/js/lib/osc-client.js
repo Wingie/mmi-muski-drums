@@ -124,7 +124,7 @@ export default class OSCClient {
       let step = value[0];  // step position (0-15)
       let patternType = value[1];  // 0=original, 1=generated
       
-      console.log(`🎯 Beat feedback: step=${step}, type=${patternType}`);
+      // console.log(`🎯 Beat feedback: step=${step}, type=${patternType}`);
       
       // Trigger visual updates for MMI
       this.messageCallbacks.forEach(callback => callback({

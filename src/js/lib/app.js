@@ -215,7 +215,7 @@ export default class MuskiDrumsApp {
       } else {
         this.loopsPlayedSinceLastInput += 1;
 
-        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 2)) {
+        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 4)) {
           if (this.generationMode === 'ai') {
             this.drumMachine.generateUsingAI();
           } else if (this.generationMode === 'random') {
@@ -282,14 +282,13 @@ export default class MuskiDrumsApp {
   // OSC Message handler (beat feedback from Sonic Pi)
   handleOSCMessage(message) {
     if (message.type === 'beat') {
-      console.log('🎯 Beat feedback:', message.step, message.patternType);
       this.handleBeatFeedback(message.step, message.patternType);
     }
   }
 
   // Handle beat feedback from Sonic Pi (like Drum-E)
   handleBeatFeedback(stepPosition, patternType) {
-    console.log(`🎵 Syncing MMI sequencer to Sonic Pi: step=${stepPosition}, type=${patternType}`);
+    // console.log(`🎵 Syncing MMI sequencer to Sonic Pi: step=${stepPosition}, type=${patternType}`);
     
     // Update MMI sequencer position to match Sonic Pi
     if (this.drumMachine && this.drumMachine.sequencer) {
@@ -300,7 +299,7 @@ export default class MuskiDrumsApp {
         // Use MMI sequencer's setActiveColumn to highlight current beat position
         this.drumMachine.sequencer.setActiveColumn(adjustedStep);
         
-        console.log(`✅ MMI sequencer synced to column: ${adjustedStep}`);
+        // console.log(`✅ MMI sequencer synced to column: ${adjustedStep}`);
       } catch (error) {
         console.error('❌ Failed to sync MMI sequencer:', error);
       }
@@ -335,13 +334,20 @@ export default class MuskiDrumsApp {
     // Get current pattern from MMI sequencer
     const sequence = this.drumMachine.sequencer.getSequence();
     
+    // Verify we have complete 16-step pattern
+    console.log('📊 Complete sequencer state:', {
+      totalSteps: sequence ? sequence.length : 0,
+      userSteps: sequence ? sequence.slice(0, 6).map((step, i) => ({ step: i, notes: step.length })) : [],
+      aiSteps: sequence ? sequence.slice(6).map((step, i) => ({ step: i + 6, notes: step.length })) : []
+    });
+    
     // Convert MMI format to sonic-pi-receiver.rb expected format
     const notes = [];
     const steps = [];
     
     if (sequence && Array.isArray(sequence)) {
       sequence.forEach((stepNotes, stepIndex) => {
-        if (stepNotes && Array.isArray(stepNotes) && stepNotes.length > 0) {
+        if (stepNotes && Array.isArray(stepNotes)) {
           stepNotes.forEach(note => {
             // Map MMI note IDs to MIDI notes (starting from 36 for kick)
             const midiNote = this.mapMMINotesToMIDI(note);
@@ -350,11 +356,7 @@ export default class MuskiDrumsApp {
           });
         }
       });
-    }
-    
-    console.log('Converting MMI pattern:', { notes, steps });
-    console.log('Sequence length:', sequence ? sequence.length : 0);
-    
+    }    
     // Send to original track (MMI is primary generator, not "filler")
     this.oscClient.sendPattern(notes, steps, false);  // Send as original pattern
     this.oscClient.setPlayMode(1);                    // Play original only
