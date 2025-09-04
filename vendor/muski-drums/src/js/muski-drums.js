@@ -273,11 +273,50 @@ export default class MuskiDrums {
     
     this.transitionSequencerToSequence(newSequence);
     
-    // Convert to Sonic Pi format and return complete pattern
-    const sonicPiData = this.convertToSonicPiFormat(newSequence);
-no     
-    return sonicPiData;
-  }dsdsd
+    // EXTRACT steps 10-15 from original pattern as input for filler  
+    const fillerInput = this.extractFillerInput(newSequence, 10, 15);
+    
+    // SECOND AI GENERATION: Filler pattern from extracted steps
+    const fillerContinuation = await this.ai.continueSeq(
+      fillerInput,
+      sequenceLen - fillerInput.length,
+      DEFAULT_TEMPERATURE
+    );
+    
+    // Build complete filler 16-step pattern (extracted input + AI continuation)
+    const fillerSequence = [...fillerInput];
+    // Clear AI generation area (steps 6-15) before adding new AI content
+    for (let i = fillerInput.length; i < sequenceLen; i++) {
+      fillerSequence[i] = [];
+    }
+    
+    // Add AI generated notes to filler steps 6-15
+    fillerContinuation.notes.forEach((note) => {
+      const normalizedPitch = note.pitch;
+      const stepIndex = note.quantizedStartStep + fillerInput.length;
+      if (stepIndex >= fillerInput.length && stepIndex < sequenceLen) {
+        fillerSequence[stepIndex].push(normalizedPitch);
+      }
+    });
+    
+    console.log('✅ Dual AI generation complete:', {
+      originalSteps: newSequence.slice(0, inputLen).map((step, i) => ({ step: i, notes: step.length })),
+      originalAI: newSequence.slice(inputLen).map((step, i) => ({ step: i + inputLen, notes: step.length })),
+      fillerInput: fillerInput.map((step, i) => ({ step: i + 10, notes: step.length })),
+      fillerAI: fillerSequence.slice(fillerInput.length).map((step, i) => ({ step: i + fillerInput.length, notes: step.length }))
+    });
+    
+    // Convert BOTH patterns to Sonic Pi format  
+    const originalPattern = this.convertToSonicPiFormat(newSequence);
+    const fillerPattern = this.convertToSonicPiFormat(fillerSequence);
+    
+    console.log('🎵 Dual Sonic Pi patterns:', { original: originalPattern, filler: fillerPattern });
+    
+    return {
+      original: originalPattern,
+      filler: fillerPattern
+    };
+  }
 
   // Convert pattern to Sonic Pi expected format
   convertToSonicPiFormat(sequence) {
@@ -294,6 +333,15 @@ no
     });
     
     return { notes, steps };
+  }
+
+  // Extract steps as input for filler AI generation
+  extractFillerInput(sequence, startStep, endStep) {
+    const fillerInput = [];
+    for (let step = startStep; step <= endStep; step++) {
+      fillerInput.push([...(sequence[step] || [])]);
+    }
+    return fillerInput; // Returns 6-step sequence for AI input
   }
 
   generateUsingRandomAlgorithm() {

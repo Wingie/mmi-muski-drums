@@ -128,7 +128,7 @@ sendCurrentPatternToOSC(patternData) {
   );
   
   // Set initial play mode (will switch dynamically in handleDrumMachineStep)
-  this.oscClient.setPlayMode(0);  // Start with original pattern
+  this.oscClient.setPlayMode(1);  // Start with original pattern
 }
 ```
 

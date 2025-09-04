@@ -153,9 +153,12 @@ export default class MuskiDrumsApp {
     
     // Generate AI pattern and send to Sonic Pi when complete
     try {
-      const sonicPiData = await this.drumMachine.generateUsingAI();
-      console.log('🤖 AI generation complete, sending pattern to Sonic Pi:', sonicPiData);
-      this.sendCurrentPatternToOSC(sonicPiData);
+      const patternData = await this.drumMachine.generateUsingAI();
+      console.log('🤖 AI generation complete:', {
+        original: patternData.original,
+        filler: patternData.filler
+      });
+      this.sendCurrentPatternToOSC(patternData);
     } catch (error) {
       console.error('❌ AI generation failed:', error);
     }
@@ -212,26 +215,34 @@ export default class MuskiDrumsApp {
       this.currentLoopPlayCount += 1;
       console.log(`🔁 Loop ${this.currentLoopPlayCount} | Idle: ${this.loopsPlayedSinceLastInput} | Mode: ${this.generationMode} | ShouldRegen: ${this.shouldRegeneratePattern}`);
       
+      // Dynamic play mode switching using configuration
+      const switchConfig = this.getPatternCycle().switches[this.currentLoopPlayCount];
+      if (switchConfig) {
+        this.oscClient.setPlayMode(switchConfig.mode);
+        console.log(`🔀 Loop ${this.currentLoopPlayCount}: Switched to mode ${switchConfig.mode} (${switchConfig.description})`);
+      }
+      
       if (this.loopsPlayedSinceLastInput >= this.config.app.maxIdleLoops) {
         console.log('⏹️ Stopping due to max idle loops reached');
         this.stopDrumMachine();
       } else {
         this.loopsPlayedSinceLastInput += 1;
 
-        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= 18)) {
+        // Regenerate every cycle
+        if ((this.shouldRegeneratePattern || this.currentLoopPlayCount >= this.getPatternCycle().totalLoops)) {
           console.log('🎵 Triggering regeneration:', { shouldRegen: this.shouldRegeneratePattern, loopCount: this.currentLoopPlayCount, mode: this.generationMode });
           
           if (this.generationMode === 'ai') {
-            this.drumMachine.generateUsingAI().then(sonicPiData => {
-              console.log('🔄 Continuous AI generation complete, sending to Sonic Pi:', sonicPiData);
-              this.sendCurrentPatternToOSC(sonicPiData);
+            this.drumMachine.generateUsingAI().then(patternData => {
+              console.log('🔄 Continuous dual AI generation complete:', patternData);
+              this.sendCurrentPatternToOSC(patternData);
             });
           } else if (this.generationMode === 'random') {
             this.drumMachine.generateUsingRandomAlgorithm();
           }
           this.shouldRegeneratePattern = false;
           this.currentLoopPlayCount = 0;
-          console.log('✅ Counters reset - next regeneration in 8 loops');
+          console.log(`✅ Counters reset - next regeneration in ${this.getPatternCycle().totalLoops} loops`);
         }
       }
     }
@@ -248,6 +259,19 @@ export default class MuskiDrumsApp {
       this.loopsPlayedSinceLastInput = 0;
     }
     
+  }
+
+  // Pattern switching configuration
+  getPatternCycle() {
+    return {
+      totalLoops: 20,
+      switches: {
+        8: { mode: 0, description: 'first filler section' },
+        10: { mode: 1, description: 'back to original' },
+        18: { mode: 0, description: 'second filler section' },
+        20: { mode: 1, description: 'reset to original before regeneration' }
+      }
+    };
   }
 
   updateControls() {
@@ -328,27 +352,46 @@ export default class MuskiDrumsApp {
     }
   }
 
-  // Send MMI pattern to OSC bridge → Sonic Pi
-  sendCurrentPatternToOSC(sonicPiData) {
+  // Send MMI dual patterns to OSC bridge → Sonic Pi
+  sendCurrentPatternToOSC(patternData) {
     if (!this.oscClient || !this.oscClient.isReady()) {
       console.log('OSC not ready, skipping pattern send');
       return;
     }
 
-    // Use provided Sonic Pi data directly (bypass sequencer read)
-    const { notes, steps } = sonicPiData;
-    
-    console.log('📊 Sending complete pattern to Sonic Pi:', {
-      totalNotes: notes.length,
-      noteRange: notes.length > 0 ? `${Math.min(...notes)}-${Math.max(...notes)}` : 'none',
-      stepRange: steps.length > 0 ? `${Math.min(...steps)}-${Math.max(...steps)}` : 'none',
-      sampleNotes: notes.slice(0, 5),
-      sampleSteps: steps.slice(0, 5)
+    console.log('📊 Sending dual patterns to Sonic Pi:', {
+      original: {
+        totalNotes: patternData.original.notes.length,
+        noteRange: patternData.original.notes.length > 0 ? 
+          `${Math.min(...patternData.original.notes)}-${Math.max(...patternData.original.notes)}` : 'none',
+        stepRange: patternData.original.steps.length > 0 ? 
+          `${Math.min(...patternData.original.steps)}-${Math.max(...patternData.original.steps)}` : 'none'
+      },
+      filler: {
+        totalNotes: patternData.filler.notes.length,
+        noteRange: patternData.filler.notes.length > 0 ? 
+          `${Math.min(...patternData.filler.notes)}-${Math.max(...patternData.filler.notes)}` : 'none',
+        stepRange: patternData.filler.steps.length > 0 ? 
+          `${Math.min(...patternData.filler.steps)}-${Math.max(...patternData.filler.steps)}` : 'none'
+      }
     });
+
+    // Send original pattern to /wek/outputs and /wek2/outputs
+    this.oscClient.sendPattern(
+      patternData.original.notes, 
+      patternData.original.steps, 
+      false  // isFillerPattern = false
+    );
     
-    // Send to original track (MMI is primary generator, not "filler")
-    this.oscClient.sendPattern(notes, steps, false);  // Send as original pattern
-    this.oscClient.setPlayMode(1);                    // Play original only
+    // Send filler pattern to /wek3/outputs and /wek4/outputs
+    this.oscClient.sendPattern(
+      patternData.filler.notes,
+      patternData.filler.steps,
+      true   // isFillerPattern = true (uses different OSC endpoints)
+    );
+    
+    // Set initial play mode (will switch dynamically in handleDrumMachineStep)
+    this.oscClient.setPlayMode(1);  // Start with original pattern
   }
 
   // Map MMI drum IDs to MIDI note numbers

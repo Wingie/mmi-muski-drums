@@ -94,21 +94,24 @@ export default class OSCClient {
     console.log('🎵 MMI initialized as original pattern source');
   }
   
-  // Send pattern data (MMI patterns go to "original" track - MMI is primary generator)
-  sendPattern(notes, steps, isGenerated = false) {
-    // MMI uses original track route since it's the primary pattern generator (not "filler")
-    const noteAddress = isGenerated ? '/wek3/outputs' : '/wek/outputs';    // Use original for MMI
-    const stepAddress = isGenerated ? '/wek4/outputs' : '/wek2/outputs';   // Use original for MMI
-    
-    console.log('🥁 Sending MMI pattern to:', noteAddress, `(${notes.length} hits over ${Math.max(...steps) + 1 || 16} steps)`);
-    
-    this.sendOSC(noteAddress, notes);
-    this.sendOSC(stepAddress, steps);
+  // Send pattern data - now supports dual patterns with filler flag
+  sendPattern(notes, steps, isFillerPattern = false) {
+
+    if (isFillerPattern) {
+      // Send filler pattern to /wek3/outputs and /wek4/outputs
+      console.log('📤 Sending filler pattern:', { notes, steps });
+      this.sendOSC('/wek3/outputs', notes);
+      this.sendOSC('/wek4/outputs', steps);
+    } else {
+      // Send original pattern to /wek/outputs and /wek2/outputs (existing behavior)
+      console.log('📤 Sending original pattern:', { notes, steps });
+      this.sendOSC('/wek/outputs', notes);
+      this.sendOSC('/wek2/outputs', steps);
+    }
   }
   
   // Set play mode (1 = original only, perfect for MMI as primary generator)
   setPlayMode(mode) {
-    console.log('▶️ Setting play mode:', ['Generated', 'Original', 'Both'][mode]);
     this.sendOSC('/wek5/outputs', mode);
   }
   
