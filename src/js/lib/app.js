@@ -75,7 +75,7 @@ export default class MuskiDrumsApp {
     this.aiButton = document.createElement('button');
     this.aiButton.type = 'button';
     this.aiButton.classList.add('btn', 'btn-light', 'btn-lg', 'btn-control', 'btn-gen-n-play', 'btn-ai', 'me-3');
-    this.aiButton.textContent = 'Generate With AI';
+    this.aiButton.textContent = 'Generate';
     this.aiButton.addEventListener('click', () => { this.handleAiButton(); });
     controls.appendChild(this.aiButton);
 
